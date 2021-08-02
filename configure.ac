@@ -21,10 +21,16 @@ AC_PROG_CXX
 AC_CHECK_LIB([pthread], [main]) # Google Test requires pthread on POSIX system.
 
 # Checks for header files.
+AC_CHECK_HEADERS([fcntl.h unistd.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
+AC_CHECK_HEADER_STDBOOL
+AC_TYPE_OFF_T
+AC_TYPE_SIZE_T
 
 # Checks for library functions.
+AC_FUNC_MMAP
+AC_CHECK_FUNCS([munmap strerror])
 
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile])
