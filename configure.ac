@@ -36,7 +36,7 @@ AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile])
 [warning_options="-Wextra -Wcast-align -Wstrict-aliasing -Wshadow "\
 `LANG=C ${CXX} -fsyntax-only -Q --help=warnings,^joined,^separate,common --help=warnings,^joined,^separate,c++ |
-${GREP} -v '\@<:@enabled\@:>@\|-Wabi\|-Waggregate-return\|-Wchkp\|-Wc90-c99-compat\|-Wnamespaces\|-Wredundant-tags\|-Wsuggest-attribute=const\|-Wsystem-headers\|-Wtemplates\|-Wtraditional@<:@^-@:>@' |
+${GREP} -v '\@<:@enabled\@:>@\|-Wabi\|-Waggregate-return\|-Wchkp\|-Wc90-c99-compat\|-Wnamespaces\|-Wpadded\|-Wredundant-tags\|-Wsuggest-attribute=const\|-Wsystem-headers\|-Wtemplates\|-Wtraditional@<:@^-@:>@' |
 ${GREP} -oe '-W@<:@@<:@:graph:@:>@@:>@\+' |
 ${SED} -e 's/<@<:@0-9,@:>@\+>//' |
 ${SED} -e '$!s/$/ \\\\/'`]

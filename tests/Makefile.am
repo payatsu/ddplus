@@ -1,7 +1,9 @@
 TESTS = testsuite
 check_PROGRAMS = testsuite
 
-testsuite_SOURCES = test.cpp
+testsuite_SOURCES = \
+	test.cpp \
+	$(top_srcdir)/src/option.cpp
 nodist_testsuite_SOURCES = gtest/gtest.h gtest/gtest-all.cc
 
 AM_CPPFLAGS = -I$(top_srcdir)/src
