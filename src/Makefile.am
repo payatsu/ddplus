@@ -1,5 +1,5 @@
 bin_PROGRAMS = memmap
-memmap_SOURCES = memmap.cpp
+memmap_SOURCES = memmap.cpp misc.hpp
 memmap_CXXFLAGS = -std=c++17 $(warning_options)
 
 .PHONY: list-warning-options
