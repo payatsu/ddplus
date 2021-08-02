@@ -9,8 +9,9 @@
 #define ERROR(s) \
     do{ \
         std::cerr << (s) \
-            << ':' << __func__ \
+            << ':' << __FILE__ \
             << ':' << std::to_string(__LINE__) \
+            << ':' << __func__ \
             << ": " << std::strerror(errno) << std::endl; \
         return errno; \
     }while(false)
