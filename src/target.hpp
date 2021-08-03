@@ -7,13 +7,18 @@
 class target{
 public:
     target(const char* filename, std::size_t offset, std::size_t length);
+    target(int fd);
+    ~target(){}
 
-    char* offset()const{return p_.get() + preamble_;}
+    int transfer_to(target& dest)const;
+
+    // deprecated.
+    char* offset()const{return mapped_data_.get() + preamble_;}
     std::size_t length()const{return pa_length_ - preamble_;}
 
 private:
     std::shared_ptr<int> ptr_to_fd_;
-    std::shared_ptr<char> p_;
+    std::shared_ptr<char> mapped_data_;
     const std::size_t preamble_;
     const std::size_t pa_length_;
 
