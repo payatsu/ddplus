@@ -6,13 +6,14 @@
 #include <iostream>
 #include <string>
 
-#define ERROR(s) \
+#define ERROR(progname, message) \
     do{ \
-        std::cerr << (s) \
+        std::cerr << (progname) \
             << ':' << __FILE__ \
             << ':' << std::to_string(__LINE__) \
             << ':' << __func__ \
-            << ": " << std::strerror(errno) << std::endl; \
+            << ": " << std::strerror(errno) \
+            << ": " << (message) << std::endl; \
         return errno; \
     }while(false)
 

@@ -44,7 +44,8 @@ int option_parser::parse_cmdopt(param& param)
         case 'w': write_enabled = true; break;
         case '?':
             errno = EINVAL;
-            ERROR(argv_[0]);
+            ERROR(argv_[0], std::string("unknown option: '")
+                    + static_cast<char>(optopt) + '\'');
             break;
         default:
             break;
@@ -53,7 +54,7 @@ int option_parser::parse_cmdopt(param& param)
 
     if(!(read_enabled ^ write_enabled)){
         errno = EINVAL;
-        ERROR(argv_[0]);
+        ERROR(argv_[0], "");
     }
 
     param.mode = read_enabled ? O_RDONLY : O_WRONLY ;
@@ -66,7 +67,7 @@ int option_parser::parse_transfer(const char* str, std::string& from, std::strin
     std::cmatch m;
     if(!std::regex_match(str, m, std::regex(REGEX_TRANSFER))){
         errno = EINVAL;
-        ERROR(argv_[0]);
+        ERROR(argv_[0], std::string("\"") + str + '"');
     }
 
     from = m.str(1);
@@ -80,7 +81,7 @@ int option_parser::parse_range(const char* str, range& range)
     std::cmatch m;
     if(!std::regex_match(str, m, std::regex(REGEX_RANGE("")))){
         errno = EINVAL;
-        ERROR(argv_[0]);
+        ERROR(argv_[0], std::string("\"") + str + '"');
     }
 
     std::size_t idx;
