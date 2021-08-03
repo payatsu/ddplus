@@ -55,7 +55,7 @@ int option_parser::parse_range(const char* str, range& range)
 {
     std::cmatch m;
     if(!std::regex_match(str, m, std::regex(
-            "(([[:digit:]]+|0x[[:xdigit:]]+)[kmgKMG]?)" ":"
+            "(([[:digit:]]+|0x[[:xdigit:]]+)[kmgKMG]?)" "@"
             "(([[:digit:]]+|0x[[:xdigit:]]+)[kmgKMG]?)"
         ))){
         errno = EINVAL;
@@ -64,13 +64,13 @@ int option_parser::parse_range(const char* str, range& range)
 
     std::size_t idx;
 
-    range.base = std::stoul(m.str(1), &idx, 0);
+    range.length = std::stoul(m.str(1), &idx, 0);
     if(idx < m.str(1).size()){
-        range.base *= to_number(m.str(1).at(idx));
+        range.length *= to_number(m.str(1).at(idx));
     }
-    range.length = std::stoul(m.str(3), &idx, 0);
+    range.base = std::stoul(m.str(3), &idx, 0);
     if(idx < m.str(3).size()){
-        range.length *= to_number(m.str(3).at(idx));
+        range.base *= to_number(m.str(3).at(idx));
     }
 
     return 0;
