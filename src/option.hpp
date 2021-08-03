@@ -6,6 +6,7 @@
 #endif
 
 #include <cstddef>
+#include <string>
 
 struct param{
     int mode;
@@ -20,6 +21,7 @@ class option_parser{
 public:
     option_parser(int argc, char* argv[]);
     int parse_cmdopt(param& param);
+    int parse_transfer(const char* str, std::string& from, std::string& to);
     int parse_range(const char* str, range& range);
 
 private:

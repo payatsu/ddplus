@@ -7,9 +7,15 @@
 
 #include "misc.hpp"
 
-#define REGEX_RANGE \
-    "(([[:digit:]]+|0x[[:xdigit:]]+)[kmgKMG]?)" "@" \
-    "(([[:digit:]]+|0x[[:xdigit:]]+)[kmgKMG]?)"
+#define REGEX_RANGE(capgrp) \
+    "(" capgrp "(?:[[:digit:]]+|0x[[:xdigit:]]+)[kmgKMG]?)" "@" \
+    "(" capgrp "(?:[[:digit:]]+|0x[[:xdigit:]]+)[kmgKMG]?)"
+
+#define REGEX_TARGET \
+    "((?:" REGEX_RANGE("?:") ")|(?:[[:graph:]]+))"
+
+#define REGEX_TRANSFER \
+    REGEX_TARGET ":" REGEX_TARGET
 
 option_parser::option_parser(int argc, char* argv[])
 : argc_(argc), argv_(argv) {}
@@ -55,10 +61,24 @@ int option_parser::parse_cmdopt(param& param)
     return 0;
 }
 
+int option_parser::parse_transfer(const char* str, std::string& from, std::string& to)
+{
+    std::cmatch m;
+    if(!std::regex_match(str, m, std::regex(REGEX_TRANSFER))){
+        errno = EINVAL;
+        ERROR(argv_[0]);
+    }
+
+    from = m.str(1);
+    to   = m.str(2);
+
+    return 0;
+}
+
 int option_parser::parse_range(const char* str, range& range)
 {
     std::cmatch m;
-    if(!std::regex_match(str, m, std::regex(REGEX_RANGE))){
+    if(!std::regex_match(str, m, std::regex(REGEX_RANGE("")))){
         errno = EINVAL;
         ERROR(argv_[0]);
     }
@@ -69,9 +89,9 @@ int option_parser::parse_range(const char* str, range& range)
     if(idx < m.str(1).size()){
         range.length *= to_number(m.str(1).at(idx));
     }
-    range.base = std::stoul(m.str(3), &idx, 0);
-    if(idx < m.str(3).size()){
-        range.base *= to_number(m.str(3).at(idx));
+    range.base = std::stoul(m.str(2), &idx, 0);
+    if(idx < m.str(2).size()){
+        range.base *= to_number(m.str(2).at(idx));
     }
 
     return 0;
