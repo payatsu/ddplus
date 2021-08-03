@@ -2,12 +2,12 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([memmap], [0.0.1], [BUG-REPORT-ADDRESS])
+AC_INIT([ddplus], [0.0.1], [BUG-REPORT-ADDRESS])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 AM_SILENT_RULES([yes])
 AC_LANG([C++])
-AC_CONFIG_SRCDIR([src/memmap.cpp])
+AC_CONFIG_SRCDIR([src/ddplus.cpp])
 AC_CONFIG_HEADERS([config.h])
 
 # Checks for programs.

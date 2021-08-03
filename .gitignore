@@ -28,7 +28,7 @@ configure
 libtool
 stamp-h1
 tags
-src/memmap
+src/ddplus
 tests/googletest-release-*/
 tests/gtest/
 tests/testsuite

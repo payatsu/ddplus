@@ -1,13 +1,13 @@
-bin_PROGRAMS = memmap
-memmap_SOURCES = \
-	memmap.cpp \
+bin_PROGRAMS = ddplus
+ddplus_SOURCES = \
+	ddplus.cpp \
 	misc.hpp \
 	option.hpp \
 	option.cpp \
 	target.hpp \
 	target.cpp
 
-memmap_CXXFLAGS = -std=c++17 $(warning_options)
+ddplus_CXXFLAGS = -std=c++17 $(warning_options)
 
 .PHONY: list-warning-options
 list-warning-options:
