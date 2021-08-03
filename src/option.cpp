@@ -7,6 +7,10 @@
 
 #include "misc.hpp"
 
+#define REGEX_RANGE \
+    "(([[:digit:]]+|0x[[:xdigit:]]+)[kmgKMG]?)" "@" \
+    "(([[:digit:]]+|0x[[:xdigit:]]+)[kmgKMG]?)"
+
 option_parser::option_parser(int argc, char* argv[])
 : argc_(argc), argv_(argv) {}
 
@@ -54,10 +58,7 @@ int option_parser::parse_cmdopt(param& param)
 int option_parser::parse_range(const char* str, range& range)
 {
     std::cmatch m;
-    if(!std::regex_match(str, m, std::regex(
-            "(([[:digit:]]+|0x[[:xdigit:]]+)[kmgKMG]?)" "@"
-            "(([[:digit:]]+|0x[[:xdigit:]]+)[kmgKMG]?)"
-        ))){
+    if(!std::regex_match(str, m, std::regex(REGEX_RANGE))){
         errno = EINVAL;
         ERROR(argv_[0]);
     }

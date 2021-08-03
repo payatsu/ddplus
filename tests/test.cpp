@@ -11,15 +11,21 @@ int main(int argc, char* argv[])
     return RUN_ALL_TESTS();
 }
 
-TEST(ParseTest, ParseRangeTest)
-{
-    const char* argv[] = {
+class ParseTest: public ::testing::Test{
+protected:
+    ParseTest(): parser(argc_, const_cast<char**>(argv_)){}
+
+    const char* argv_[3] = {
         "cmd",
         "-r",
-        "0x123:0x456",
+        "0x123@0x456",
     };
-    option_parser parser(sizeof(argv)/sizeof(argv[0]), const_cast<char**>(argv));
+    int argc_ = sizeof(argv_)/sizeof(argv_[0]);
+    option_parser parser;
+};
 
+TEST_F(ParseTest, ParseRangeTest)
+{
     range range;
     EXPECT_EQ(0, parser.parse_range("1@23", range));
     EXPECT_EQ(range.length,  1u);
@@ -56,6 +62,8 @@ TEST(ParseTest, ParseRangeTest)
     EXPECT_EQ(0, parser.parse_range("1G@1K", range));
     EXPECT_EQ(range.length, 1u << 30);
     EXPECT_EQ(range.base,   1u << 10);
+
+    EXPECT_NE(0, parser.parse_range("an_illegal_notation", range));
 }
 
 // vim: expandtab shiftwidth=0 tabstop=4 :
