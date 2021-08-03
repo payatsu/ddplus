@@ -64,39 +64,28 @@ int option_parser::parse_range(const char* str, range& range)
 
     std::size_t idx;
 
-    auto base = std::stoull(m.str(1), &idx, 0);
+    range.base = std::stoul(m.str(1), &idx, 0);
     if(idx < m.str(1).size()){
-        base = multiply_by_suffix(base, m.str(1).at(idx));
+        range.base *= to_number(m.str(1).at(idx));
     }
-    auto length = std::stoull(m.str(3), &idx, 0);
+    range.length = std::stoul(m.str(3), &idx, 0);
     if(idx < m.str(3).size()){
-        length = multiply_by_suffix(length, m.str(3).at(idx));
+        range.length *= to_number(m.str(3).at(idx));
     }
 
-    range.base   = base;
-    range.length = length;
     return 0;
 }
 
-std::size_t option_parser::multiply_by_suffix(std::size_t value, char suffix)
+std::size_t option_parser::to_number(char c)
 {
-    switch(suffix){
-    case 'k':
-    case 'K':
-        value <<= 10;
-        break;
-    case 'm':
-    case 'M':
-        value <<= 20;
-        break;
-    case 'g':
-    case 'G':
-        value <<= 30;
-        break;
-    default:
-        break;
+    std::size_t n = 1u;
+    switch(c){
+    case 'k': case 'K': n <<= 10; break;
+    case 'm': case 'M': n <<= 20; break;
+    case 'g': case 'G': n <<= 30; break;
+    default: break;
     }
-    return value;
+    return n;
 }
 
 // vim: expandtab shiftwidth=0 tabstop=4 :

@@ -23,7 +23,7 @@ public:
     int parse_range(const char* str, range& range);
 
 private:
-    static std::size_t multiply_by_suffix(std::size_t value, char suffix);
+    static std::size_t to_number(char c);
 
 private:
     int argc_;

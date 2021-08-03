@@ -22,40 +22,40 @@ TEST(ParseTest, ParseRangeTest)
 
     range range;
     EXPECT_EQ(0, parser.parse_range("1:23", range));
-    EXPECT_EQ(range.base,    1);
-    EXPECT_EQ(range.length, 23);
+    EXPECT_EQ(range.base,    1u);
+    EXPECT_EQ(range.length, 23u);
 
     EXPECT_EQ(0, parser.parse_range("12:3", range));
-    EXPECT_EQ(range.base,  12);
-    EXPECT_EQ(range.length, 3);
+    EXPECT_EQ(range.base,  12u);
+    EXPECT_EQ(range.length, 3u);
 
     EXPECT_EQ(0, parser.parse_range("123:456", range));
-    EXPECT_EQ(range.base,   123);
-    EXPECT_EQ(range.length, 456);
+    EXPECT_EQ(range.base,   123u);
+    EXPECT_EQ(range.length, 456u);
 
     EXPECT_EQ(0, parser.parse_range("0xf:07", range));
-    EXPECT_EQ(range.base,  0xf);
-    EXPECT_EQ(range.length, 07);
+    EXPECT_EQ(range.base,  0xfu);
+    EXPECT_EQ(range.length, 07u);
 
     EXPECT_EQ(0, parser.parse_range("0xff:077", range));
-    EXPECT_EQ(range.base,  0xff);
-    EXPECT_EQ(range.length, 077);
+    EXPECT_EQ(range.base,  0xffu);
+    EXPECT_EQ(range.length, 077u);
 
     EXPECT_EQ(0, parser.parse_range("0xfff:0777", range));
-    EXPECT_EQ(range.base,  0xfff);
-    EXPECT_EQ(range.length, 0777);
+    EXPECT_EQ(range.base,  0xfffu);
+    EXPECT_EQ(range.length, 0777u);
 
     EXPECT_EQ(0, parser.parse_range("1k:1G", range));
-    EXPECT_EQ(range.base,   1 << 10);
-    EXPECT_EQ(range.length, 1 << 30);
+    EXPECT_EQ(range.base,   1u << 10);
+    EXPECT_EQ(range.length, 1u << 30);
 
     EXPECT_EQ(0, parser.parse_range("1M:1m", range));
-    EXPECT_EQ(range.base,   1 << 20);
-    EXPECT_EQ(range.length, 1 << 20);
+    EXPECT_EQ(range.base,   1u << 20);
+    EXPECT_EQ(range.length, 1u << 20);
 
     EXPECT_EQ(0, parser.parse_range("1G:1K", range));
-    EXPECT_EQ(range.base,   1 << 30);
-    EXPECT_EQ(range.length, 1 << 10);
+    EXPECT_EQ(range.base,   1u << 30);
+    EXPECT_EQ(range.length, 1u << 10);
 }
 
 // vim: expandtab shiftwidth=0 tabstop=4 :
