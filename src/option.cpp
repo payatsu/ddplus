@@ -22,26 +22,23 @@ option_parser::option_parser(int argc, char* argv[])
 
 int option_parser::parse_cmdopt(param& param)
 {
-    bool read_enabled = false;
-    bool write_enabled = false;
-
     while(true){
         opterr = 0;
         int option_index = 0;
         option longopts[] = {
-            {"read-from-ram", no_argument, nullptr, 'r'},
-            {"write-to-ram",  no_argument, nullptr, 'w'},
+            {"help",    no_argument, nullptr, 'h'},
+            {"verbose", no_argument, nullptr, 'v'},
             {}
         };
 
-        int c = getopt_long(argc_, argv_, "rw", longopts, &option_index);
+        int c = getopt_long(argc_, argv_, "hv", longopts, &option_index);
         if(c == -1){
             break;
         }
 
         switch(c){
-        case 'r': read_enabled  = true; break;
-        case 'w': write_enabled = true; break;
+        case 'h': break;
+        case 'v': break;
         case '?':
             errno = EINVAL;
             ERROR(argv_[0], std::string("unknown option: '")
@@ -51,13 +48,6 @@ int option_parser::parse_cmdopt(param& param)
             break;
         }
     }
-
-    if(!(read_enabled ^ write_enabled)){
-        errno = EINVAL;
-        ERROR(argv_[0], "");
-    }
-
-    param.mode = read_enabled ? O_RDONLY : O_WRONLY ;
 
     return 0;
 }
