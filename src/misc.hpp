@@ -3,10 +3,11 @@
 
 #include <cerrno>
 #include <cstring>
+#include <stdexcept>
 #include <iostream>
 #include <string>
 
-#define ERROR(progname, message) \
+#define ERROR_BASE(progname, message, finish) \
     do{ \
         std::cerr << (progname) \
             << ':' << __FILE__ \
@@ -14,8 +15,14 @@
             << ':' << __func__ \
             << ": " << std::strerror(errno) \
             << ": " << (message) << std::endl; \
-        return errno; \
+        finish; \
     }while(false)
+
+#define ERROR(progname, message) \
+    ERROR_BASE(progname, message, return errno)
+
+#define ERROR_THROW(progname, message) \
+    ERROR_BASE(progname, message, throw std::runtime_error(std::strerror(errno)))
 
 #endif // MISC_HPP_
 

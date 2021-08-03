@@ -80,9 +80,9 @@ int option_parser::parse_range(const char* str, range& range)
     if(idx < m.str(1).size()){
         range.length *= to_number(m.str(1).at(idx));
     }
-    range.base = std::stoul(m.str(2), &idx, 0);
+    range.offset = std::stoul(m.str(2), &idx, 0);
     if(idx < m.str(2).size()){
-        range.base *= to_number(m.str(2).at(idx));
+        range.offset *= to_number(m.str(2).at(idx));
     }
 
     return 0;

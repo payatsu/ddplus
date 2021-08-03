@@ -3,7 +3,9 @@ memmap_SOURCES = \
 	memmap.cpp \
 	misc.hpp \
 	option.hpp \
-	option.cpp
+	option.cpp \
+	target.hpp \
+	target.cpp
 
 memmap_CXXFLAGS = -std=c++17 $(warning_options)
 

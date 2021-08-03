@@ -13,7 +13,7 @@ struct param{
 };
 
 struct range{
-    std::size_t base;
+    std::size_t offset;
     std::size_t length;
 };
 
