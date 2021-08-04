@@ -10,8 +10,9 @@ target::target(const std::string& filename, std::size_t offset, std::size_t leng
 : ptr_to_fd_(new int(open(filename.c_str(),O_RDWR | O_CREAT,
                 S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)), close),
 mmapped_data_(),
-preamble_(),
-length_()
+offset_(offset),
+length_(length),
+page_offset_()
 {
     if(*ptr_to_fd_ == -1){
         ERROR_THROW("", filename);
@@ -29,8 +30,8 @@ length_()
     switch(buf.st_mode & S_IFMT){
     case S_IFREG:
     case S_IFLNK:
-        offset = 0u;
-        length = static_cast<std::size_t>(buf.st_size);
+        offset_ = 0u;
+        length_ = static_cast<std::size_t>(buf.st_size);
         break;
     case S_IFSOCK:
     case S_IFBLK:
@@ -43,17 +44,15 @@ length_()
         break;
     }
 
-    const std::size_t pa_offset = offset & ~(static_cast<std::size_t>(page_size_) - 1);
-    preamble_ = offset - pa_offset;
-    length_ = length;
+    page_offset_ = offset_ & (static_cast<std::size_t>(page_size_) - 1);
 
-    if(length == 0){
+    if(length_ == 0){
         return;
     }
 
-    void* m = mmap(nullptr, preamble_ + length_,
+    void* m = mmap(nullptr, page_offset_ + length_,
             PROT_READ | PROT_WRITE, MAP_SHARED, *ptr_to_fd_,
-            static_cast<off_t>(offset & ~(
+            static_cast<off_t>(offset_ & ~(
                     static_cast<std::size_t>(page_size_) - 1)));
 
     if(m == MAP_FAILED){
@@ -61,14 +60,15 @@ length_()
     }
 
     mmapped_data_.reset(reinterpret_cast<char*>(m),
-            [&](char* p){munmap(p, preamble_ + length_);});
+            [&](char* p){munmap(p, page_offset_ + length_);});
 }
 
 target::target(int fd)
 : ptr_to_fd_(new int(fd), [](int*){/* do nothing. */}),
 mmapped_data_(),
-preamble_(),
-length_()
+offset_(),
+length_(),
+page_offset_()
 {}
 
 int target::transfer_to(const target& dest)const

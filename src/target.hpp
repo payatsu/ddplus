@@ -15,14 +15,15 @@ public:
     int transfer_to(const target& dest)const;
 
     // deprecated.
-    char* offset()const{return mmapped_data_.get() + preamble_;}
+    char* offset()const{return mmapped_data_.get() + page_offset_;}
     std::size_t length()const{return length_;}
 
 private:
     std::shared_ptr<int> ptr_to_fd_;
     std::shared_ptr<char> mmapped_data_;
-    std::size_t preamble_;
+    std::size_t offset_;
     std::size_t length_;
+    std::size_t page_offset_;
 
     static ssize_t write(int fd, const void* buf, size_t count);
     static ssize_t read(int fd, void* buf, size_t count);
