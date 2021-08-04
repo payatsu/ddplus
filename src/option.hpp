@@ -7,6 +7,7 @@
 
 #include <cstddef>
 #include <string>
+#include "target.hpp"
 
 struct param{
     int mode;
@@ -20,9 +21,9 @@ struct range{
 class option_parser{
 public:
     option_parser(int argc, char* argv[]);
-    int parse_cmdopt(param& param);
-    int parse_transfer(const char* str, std::string& from, std::string& to);
-    int parse_range(const char* str, range& range);
+    int parse_cmdopt(param& param)const;
+    int parse_transfer(const std::string& str, std::string& src, std::string& dst)const;
+    int parse_range(const std::string& str, range& range)const;
 
 private:
     static std::size_t to_number(char c);

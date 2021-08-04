@@ -7,8 +7,8 @@
 
 const long target::page_size_ = sysconf(_SC_PAGESIZE);
 
-target::target(const char* filename, std::size_t offset, std::size_t length)
-: ptr_to_fd_(new int(open(filename, O_RDWR | O_CREAT, S_IRWXU | S_IRGRP | S_IROTH)), close),
+target::target(const std::string& filename, std::size_t offset, std::size_t length)
+: ptr_to_fd_(new int(open(filename.c_str(), O_RDWR | O_CREAT, S_IRWXU | S_IRGRP | S_IROTH)), close),
 mmapped_data_(),
 preamble_(),
 length_()

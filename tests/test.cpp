@@ -28,25 +28,25 @@ protected:
 
 TEST_F(ParseTest, ParseTransferTest)
 {
-    std::string from, to;
-    EXPECT_EQ(0, parser.parse_transfer("1@23:4@56", from, to));
-    EXPECT_EQ(from, "1@23");
-    EXPECT_EQ(to,   "4@56");
+    std::string src, dst;
+    EXPECT_EQ(0, parser.parse_transfer("1@23:4@56", src, dst));
+    EXPECT_EQ(src, "1@23");
+    EXPECT_EQ(dst, "4@56");
 
-    EXPECT_EQ(0, parser.parse_transfer("7@89:/home/alice/data.bin", from, to));
-    EXPECT_EQ(from, "7@89");
-    EXPECT_EQ(to,   "/home/alice/data.bin");
+    EXPECT_EQ(0, parser.parse_transfer("7@89:/home/alice/data.bin", src, dst));
+    EXPECT_EQ(src, "7@89");
+    EXPECT_EQ(dst, "/home/alice/data.bin");
 
-    EXPECT_EQ(0, parser.parse_transfer("/home/bob/data.bin:10@11", from, to));
-    EXPECT_EQ(from, "/home/bob/data.bin");
-    EXPECT_EQ(to,   "10@11");
+    EXPECT_EQ(0, parser.parse_transfer("/home/bob/data.bin:10@11", src, dst));
+    EXPECT_EQ(src, "/home/bob/data.bin");
+    EXPECT_EQ(dst, "10@11");
 
-    EXPECT_EQ(0, parser.parse_transfer("/home/charlie/data.bin:/home/derek/data.bin", from, to));
-    EXPECT_EQ(from, "/home/charlie/data.bin");
-    EXPECT_EQ(to,   "/home/derek/data.bin");
+    EXPECT_EQ(0, parser.parse_transfer("/home/charlie/data.bin:/home/derek/data.bin", src, dst));
+    EXPECT_EQ(src, "/home/charlie/data.bin");
+    EXPECT_EQ(dst, "/home/derek/data.bin");
 
-    EXPECT_NE(0, parser.parse_transfer(":/source/is/missing", from, to));
-    EXPECT_NE(0, parser.parse_transfer("/dest/is/missing:", from, to));
+    EXPECT_NE(0, parser.parse_transfer(":/source/is/missing", src, dst));
+    EXPECT_NE(0, parser.parse_transfer("/dest/is/missing:", src, dst));
 }
 
 TEST_F(ParseTest, ParseRangeTest)

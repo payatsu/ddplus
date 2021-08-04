@@ -18,7 +18,7 @@
 option_parser::option_parser(int argc, char* argv[])
 : argc_(argc), argv_(argv) {}
 
-int option_parser::parse_cmdopt(param& param)
+int option_parser::parse_cmdopt(param& param)const
 {
     while(true){
         opterr = 0;
@@ -50,26 +50,26 @@ int option_parser::parse_cmdopt(param& param)
     return 0;
 }
 
-int option_parser::parse_transfer(const char* str, std::string& from, std::string& to)
+int option_parser::parse_transfer(const std::string& str, std::string& src, std::string& dst)const
 {
-    std::cmatch m;
+    std::smatch m;
     if(!std::regex_match(str, m, std::regex(REGEX_TRANSFER))){
         errno = EINVAL;
         ERROR(argv_[0], std::string("\"") + str + '"');
     }
 
-    from = m.str(1);
-    to   = m.str(2);
+    src = m.str(1);
+    dst = m.str(2);
 
     return 0;
 }
 
-int option_parser::parse_range(const char* str, range& range)
+int option_parser::parse_range(const std::string& str, range& range)const
 {
-    std::cmatch m;
+    std::smatch m;
     if(!std::regex_match(str, m, std::regex(REGEX_RANGE("")))){
         errno = EINVAL;
-        ERROR(argv_[0], std::string("\"") + str + '"');
+        return -errno;
     }
 
     std::size_t idx;

@@ -1,12 +1,12 @@
 #ifndef TARGET_HPP_
 #define TARGET_HPP_
-#endif // TARGET_HPP_
 
 #include <memory>
+#include <string>
 
 class target{
 public:
-    target(const char* filename, std::size_t offset = 0ul, std::size_t length = 0ul);
+    target(const std::string& filename, std::size_t offset = 0ul, std::size_t length = 0ul);
     target(int fd);
     ~target(){}
 
@@ -26,5 +26,7 @@ private:
 
     const static long page_size_;
 };
+
+#endif // TARGET_HPP_
 
 // vim: expandtab shiftwidth=0 tabstop=4 :
