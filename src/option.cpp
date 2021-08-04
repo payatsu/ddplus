@@ -1,10 +1,8 @@
 #include "option.hpp"
 
 #include <regex>
-
 #include <fcntl.h>
 #include <getopt.h>
-
 #include "misc.hpp"
 
 #define REGEX_RANGE(capgrp) \
