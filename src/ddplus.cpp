@@ -13,17 +13,13 @@
 int main(int argc, char* argv[])
 {
     try{
-        option_parser(argc, argv).parse_cmdopt();
-    }catch(const std::runtime_error& e){
-        std::cout << e.what() << std::endl;
-        ERROR(argv[0], "");
+        param param = option_parser(argc, argv).parse_cmdopt();
+        for(auto [src, dst]: param.transfers){
+            src.transfer_to(dst);
+        }
+    }catch(const std::runtime_error&){
+        ; // do nothing.
     }
-
-    off_t offset = 1024 * 1024 * 1024;
-    size_t length = 4096u;
-    target mem("/dev/mem", static_cast<std::size_t>(offset), length);
-    target out(1);
-    mem.transfer_to(out);
 
     return 0;
 }
