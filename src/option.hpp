@@ -26,6 +26,11 @@ struct range{
     std::size_t length;
 };
 
+enum class target_role{
+    SRC,
+    DST,
+};
+
 class option_parser{
 public:
     option_parser(int argc, char* argv[]);
@@ -33,7 +38,7 @@ public:
     param parse_cmdopt()const;
 
     transfer to_transfer(const std::string& spec)const;
-    target to_target(const std::string& spec)const;
+    target to_target(const std::string& spec, target_role role)const;
 
     void parse_transfer(const std::string& str, std::string& src, std::string& dst)const;
     void parse_range(const std::string& str, range& range)const;

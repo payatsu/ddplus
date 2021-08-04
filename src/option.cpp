@@ -3,6 +3,7 @@
 #include <regex>
 #include <fcntl.h>
 #include <getopt.h>
+#include <unistd.h>
 #include "misc.hpp"
 
 #define REGEX_RANGE(capgrp) \
@@ -59,16 +60,22 @@ transfer option_parser::to_transfer(const std::string& spec)const
 {
     std::string src, dst;
     parse_transfer(spec, src, dst);
-    return transfer{to_target(src), to_target(dst)};
+    return transfer{
+        to_target(src, target_role::SRC),
+        to_target(dst, target_role::DST)
+    };
 }
 
-target option_parser::to_target(const std::string& spec)const
+target option_parser::to_target(const std::string& spec, target_role role)const
 {
     try{
         range r;
         parse_range(spec, r);
         return target("/dev/mem", r.offset, r.length);
     }catch(const std::runtime_error&){
+        if(spec == "-"){
+            return target(role == target_role::SRC ? STDIN_FILENO : STDOUT_FILENO);
+        }
         return target(spec);
     }
 }
