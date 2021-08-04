@@ -7,10 +7,18 @@
 
 #include <cstddef>
 #include <string>
+#include <vector>
 #include "target.hpp"
 
+struct transfer{
+    target src;
+    target dst;
+};
+
 struct param{
-    int mode;
+    param() = default;
+
+    std::vector<transfer> transfers;
 };
 
 struct range{
@@ -21,9 +29,14 @@ struct range{
 class option_parser{
 public:
     option_parser(int argc, char* argv[]);
-    int parse_cmdopt(param& param)const;
-    int parse_transfer(const std::string& str, std::string& src, std::string& dst)const;
-    int parse_range(const std::string& str, range& range)const;
+
+    param parse_cmdopt()const;
+
+    transfer to_transfer(const std::string& spec)const;
+    target to_target(const std::string& spec)const;
+
+    void parse_transfer(const std::string& str, std::string& src, std::string& dst)const;
+    void parse_range(const std::string& str, range& range)const;
 
 private:
     static std::size_t to_number(char c);

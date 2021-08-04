@@ -29,66 +29,66 @@ protected:
 TEST_F(ParseTest, ParseTransferTest)
 {
     std::string src, dst;
-    EXPECT_EQ(0, parser.parse_transfer("1@23:4@56", src, dst));
+    EXPECT_NO_THROW(parser.parse_transfer("1@23:4@56", src, dst));
     EXPECT_EQ(src, "1@23");
     EXPECT_EQ(dst, "4@56");
 
-    EXPECT_EQ(0, parser.parse_transfer("7@89:/home/alice/data.bin", src, dst));
+    EXPECT_NO_THROW(parser.parse_transfer("7@89:/home/alice/data.bin", src, dst));
     EXPECT_EQ(src, "7@89");
     EXPECT_EQ(dst, "/home/alice/data.bin");
 
-    EXPECT_EQ(0, parser.parse_transfer("/home/bob/data.bin:10@11", src, dst));
+    EXPECT_NO_THROW(parser.parse_transfer("/home/bob/data.bin:10@11", src, dst));
     EXPECT_EQ(src, "/home/bob/data.bin");
     EXPECT_EQ(dst, "10@11");
 
-    EXPECT_EQ(0, parser.parse_transfer("/home/charlie/data.bin:/home/derek/data.bin", src, dst));
+    EXPECT_NO_THROW(parser.parse_transfer("/home/charlie/data.bin:/home/derek/data.bin", src, dst));
     EXPECT_EQ(src, "/home/charlie/data.bin");
     EXPECT_EQ(dst, "/home/derek/data.bin");
 
-    EXPECT_NE(0, parser.parse_transfer(":/source/is/missing", src, dst));
-    EXPECT_NE(0, parser.parse_transfer("/dest/is/missing:", src, dst));
+    EXPECT_THROW(parser.parse_transfer(":/source/is/missing", src, dst), std::runtime_error);
+    EXPECT_THROW(parser.parse_transfer("/dest/is/missing:", src, dst), std::runtime_error);
 }
 
 TEST_F(ParseTest, ParseRangeTest)
 {
     range range;
-    EXPECT_EQ(0, parser.parse_range("1@23", range));
+    EXPECT_NO_THROW(parser.parse_range("1@23", range));
     EXPECT_EQ(range.length,  1u);
     EXPECT_EQ(range.offset, 23u);
 
-    EXPECT_EQ(0, parser.parse_range("12@3", range));
+    EXPECT_NO_THROW(parser.parse_range("12@3", range));
     EXPECT_EQ(range.length, 12u);
     EXPECT_EQ(range.offset,  3u);
 
-    EXPECT_EQ(0, parser.parse_range("123@456", range));
+    EXPECT_NO_THROW(parser.parse_range("123@456", range));
     EXPECT_EQ(range.length, 123u);
     EXPECT_EQ(range.offset, 456u);
 
-    EXPECT_EQ(0, parser.parse_range("0xf@07", range));
+    EXPECT_NO_THROW(parser.parse_range("0xf@07", range));
     EXPECT_EQ(range.length, 0xfu);
     EXPECT_EQ(range.offset,  07u);
 
-    EXPECT_EQ(0, parser.parse_range("0xff@077", range));
+    EXPECT_NO_THROW(parser.parse_range("0xff@077", range));
     EXPECT_EQ(range.length, 0xffu);
     EXPECT_EQ(range.offset,  077u);
 
-    EXPECT_EQ(0, parser.parse_range("0xfff@0777", range));
+    EXPECT_NO_THROW(parser.parse_range("0xfff@0777", range));
     EXPECT_EQ(range.length, 0xfffu);
     EXPECT_EQ(range.offset,  0777u);
 
-    EXPECT_EQ(0, parser.parse_range("1k@1G", range));
+    EXPECT_NO_THROW(parser.parse_range("1k@1G", range));
     EXPECT_EQ(range.length, 1u << 10);
     EXPECT_EQ(range.offset, 1u << 30);
 
-    EXPECT_EQ(0, parser.parse_range("1M@1m", range));
+    EXPECT_NO_THROW(parser.parse_range("1M@1m", range));
     EXPECT_EQ(range.length, 1u << 20);
     EXPECT_EQ(range.offset, 1u << 20);
 
-    EXPECT_EQ(0, parser.parse_range("1G@1K", range));
+    EXPECT_NO_THROW(parser.parse_range("1G@1K", range));
     EXPECT_EQ(range.length, 1u << 30);
     EXPECT_EQ(range.offset, 1u << 10);
 
-    EXPECT_NE(0, parser.parse_range("an_illegal_notation", range));
+    EXPECT_THROW(parser.parse_range("an_illegal_notation", range), std::runtime_error);
 }
 
 TEST(TargetTest, ConstructionTest)
@@ -179,7 +179,7 @@ TEST(TargetTest, TransferTest)
         unlink(dst_file);
 
         target src("/dev/zero", 0, 4096);
-        EXPECT_EQ(src.transfer_to(dst_file), 0);
+        EXPECT_EQ(src.transfer_to(target(dst_file)), 0);
         target dst(dst_file);
         EXPECT_EQ(dst.length(), src.length());
         EXPECT_EQ(dst.offset()[0], src.offset()[0]);
@@ -239,7 +239,7 @@ TEST(TargetTest, TransferTest)
         const char* dst_file = "out.bin";
         unlink(dst_file);
 
-        EXPECT_EQ(src.transfer_to(dst_file), 0);
+        EXPECT_EQ(src.transfer_to(target(dst_file)), 0);
         target dst(dst_file);
         EXPECT_EQ(dst.length(), static_cast<std::size_t>(size));
         EXPECT_EQ(dst.offset()[0], 'a');

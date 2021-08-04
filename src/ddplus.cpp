@@ -12,9 +12,10 @@
 
 int main(int argc, char* argv[])
 {
-    param param;
-    option_parser parser(argc, argv);
-    if(parser.parse_cmdopt(param)){
+    try{
+        option_parser(argc, argv).parse_cmdopt();
+    }catch(const std::runtime_error& e){
+        std::cout << e.what() << std::endl;
         ERROR(argv[0], "");
     }
 

@@ -8,6 +8,7 @@ class target{
 public:
     target(const std::string& filename, std::size_t offset = 0ul, std::size_t length = 0ul);
     target(int fd);
+    target(const target&) = default;
     ~target(){}
 
     int transfer_to(const target& dest)const;
