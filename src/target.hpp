@@ -10,7 +10,7 @@ public:
     target(int fd);
     ~target(){}
 
-    int transfer_to(target& dest)const;
+    int transfer_to(const target& dest)const;
 
     // deprecated.
     char* offset()const{return mmapped_data_.get() + preamble_;}

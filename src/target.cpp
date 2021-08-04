@@ -49,6 +49,10 @@ pa_length_()
     preamble_ = offset - pa_offset;
     pa_length_ = length + preamble_;
 
+    if(length == 0){
+        return;
+    }
+
     void* m = mmap(nullptr, pa_length_,
             PROT_READ | PROT_WRITE, MAP_SHARED, *ptr_to_fd_,
             static_cast<off_t>(offset & ~(
@@ -69,19 +73,46 @@ preamble_(),
 pa_length_()
 {}
 
-int target::transfer_to(target& dest)const
+int target::transfer_to(const target& dest)const
 {
     if(mmapped_data_){
         if(dest.mmapped_data_){
-            // TODO: implement here.
+            std::memcpy(dest.offset(), offset(), std::min(length(), dest.length()));
         }else{
-            write(*dest.ptr_to_fd_, mmapped_data_.get() + preamble_, pa_length_ - preamble_);
+            write(*dest.ptr_to_fd_, offset(), length());
         }
     }else{
-        if(dest.mmapped_data_){
-            // TODO: implement here.
-        }else{
-            // TODO: implement here.
+        const std::size_t buff_size = static_cast<std::size_t>(page_size_) * 16ul;
+        std::shared_ptr<char[]> buff(new char[buff_size]);
+
+        ssize_t r_ret;
+        std::size_t transfer_count = 0ul;
+        while((r_ret = read(*ptr_to_fd_, buff.get(), buff_size)) != 0){
+            if(r_ret == -1){
+                ERROR("", "read");
+            }
+
+            std::size_t r = static_cast<std::size_t>(r_ret);
+            if(dest.mmapped_data_){
+                if(dest.length() < transfer_count + r){
+                    r = dest.length() - transfer_count;
+                }
+                std::memcpy(dest.offset() + transfer_count, buff.get(), r);
+                transfer_count += r;
+                if(dest.length() <= transfer_count){
+                    break;
+                }
+            }else{
+                std::size_t write_count = 0;
+                do{
+                    ssize_t w_ret = write(*dest.ptr_to_fd_,
+                            buff.get() + write_count, r - write_count);
+                    if(w_ret == -1){
+                        ERROR("", "write");
+                    }
+                    write_count += static_cast<std::size_t>(w_ret);
+                }while(write_count < r);
+            }
         }
     }
     return 0;
