@@ -90,13 +90,53 @@ TEST_F(ParseTest, ParseRangeTest)
     EXPECT_NE(0, parser.parse_range("an_illegal_notation", range));
 }
 
-TEST(TargetTest, BasicTest)
+TEST(TargetTest, ConstructionTest)
 {
-    target t("test.o", 1, 16);
-    EXPECT_EQ(t.length(), 16u);
-    EXPECT_EQ(t.offset()[0], 'E');
-    EXPECT_EQ(t.offset()[1], 'L');
-    EXPECT_EQ(t.offset()[2], 'F');
+    // in case of) regular file.
+    {
+        const char* file = "test.o";
+        struct stat buf;
+        EXPECT_NE(stat(file, &buf), -1);
+
+        target t(file);
+        EXPECT_EQ(t.length(), static_cast<std::size_t>(buf.st_size));
+        EXPECT_EQ(t.offset()[0], '\x7f');
+        EXPECT_EQ(t.offset()[1], 'E');
+        EXPECT_EQ(t.offset()[2], 'L');
+        EXPECT_EQ(t.offset()[3], 'F');
+    }
+
+    // in case of) character device(/dev/mem).
+    {
+        const char* file = "/dev/zero";
+
+        target t1(file, 0, 0x2000);
+        EXPECT_EQ(t1.length(), 0x2000ul);
+        EXPECT_EQ(t1.offset()[0x0000], 0);
+        EXPECT_EQ(t1.offset()[0x0001], 0);
+        EXPECT_EQ(t1.offset()[0x0fff], 0);
+        EXPECT_EQ(t1.offset()[0x1000], 0);
+        EXPECT_EQ(t1.offset()[0x1fff], 0);
+
+        target t2(file, 0x0fff, 0x2000);
+        EXPECT_EQ(t2.length(), 0x2000ul);
+        EXPECT_EQ(t2.offset()[0x0000], 0);
+        EXPECT_EQ(t2.offset()[0x0001], 0);
+        EXPECT_EQ(t2.offset()[0x0fff], 0);
+        EXPECT_EQ(t2.offset()[0x1000], 0);
+        EXPECT_EQ(t2.offset()[0x1fff], 0);
+    }
+
+    // in case of) directory.
+    {
+        const char* file = "/";
+        EXPECT_THROW(target t(file), std::runtime_error);
+    }
+
+    // in case of) other file. socket, symbolic link, block device, fifo.
+    {
+        // TODO: add test.
+    }
 }
 
 // vim: expandtab shiftwidth=0 tabstop=4 :
