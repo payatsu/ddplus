@@ -2,7 +2,6 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include <unistd.h>
 #include "misc.hpp"
 
 const long target::page_size_ = sysconf(_SC_PAGESIZE);
@@ -78,18 +77,10 @@ int target::transfer_to(const target& dest)const
         if(dest.mmapped_data_){
             std::memcpy(dest.offset(), offset(), std::min(length(), dest.length()));
         }else{
-            std::size_t write_count = 0;
-            do{
-                ssize_t w_ret = write(*dest.ptr_to_fd_,
-                        offset() + write_count, length() - write_count);
-                if(w_ret == -1){
-                    if(errno == EINTR){
-                        continue;
-                    }
-                    ERROR("", "write");
-                }
-                write_count += static_cast<std::size_t>(w_ret);
-            }while(write_count < length());
+            ssize_t w_ret = write(*dest.ptr_to_fd_, offset(), length());
+            if(w_ret == -1){
+                ERROR("", "write");
+            }
         }
     }else{
         const std::size_t buff_size = static_cast<std::size_t>(page_size_) * 16ul;
@@ -99,12 +90,8 @@ int target::transfer_to(const target& dest)const
         std::size_t transfer_count = 0ul;
         while((r_ret = read(*ptr_to_fd_, buff.get(), buff_size)) != 0){
             if(r_ret == -1){
-                if(errno == EINTR){
-                    continue;
-                }
                 ERROR("", "read");
             }
-
             std::size_t r = static_cast<std::size_t>(r_ret);
             if(dest.mmapped_data_){
                 if(dest.length() < transfer_count + r){
@@ -116,33 +103,48 @@ int target::transfer_to(const target& dest)const
                     break;
                 }
             }else{
-                std::size_t write_count = 0;
-                do{
-                    ssize_t w_ret = write(*dest.ptr_to_fd_,
-                            buff.get() + write_count, r - write_count);
-                    if(w_ret == -1){
-                        if(errno == EINTR){
-                            continue;
-                        }
-                        ERROR("", "write");
-                    }
-                    write_count += static_cast<std::size_t>(w_ret);
-                }while(write_count < r);
+                ssize_t w_ret = write(*dest.ptr_to_fd_, buff.get(), r);
+                if(w_ret == -1){
+                    ERROR("", "write");
+                }
             }
         }
     }
     return 0;
 }
 
+ssize_t target::read(int fd, void* buf, size_t count)
+{
+    ssize_t ret;
+    do{
+        ret = ::read(fd, buf, count);
+    }while(ret == -1 && errno == EINTR);
+    return ret;
+}
+
+ssize_t target::write(int fd, const void* buf, size_t count)
+{
+    std::size_t done = 0;
+    ssize_t ret;
+    do{
+        do{
+            ret = ::write(fd, reinterpret_cast<const char*>(buf) + done, count - done);
+        }while(ret == -1 && errno == EINTR);
+        if(ret == -1){
+            return ret;
+        }
+        done += static_cast<std::size_t>(ret);
+    }while(done < count);
+    return ret;
+}
+
 void target::close(int* fd_ptr)
 {
     if(0 <= *fd_ptr){
-        while(true){
-            int ret = ::close(*fd_ptr);
-            if(ret != -1 || errno != EINTR){
-                break;
-            }
-        }
+        int ret;
+        do{
+            ret = ::close(*fd_ptr);
+        }while(ret == -1 && errno == EINTR);
     }
     delete fd_ptr;
 }

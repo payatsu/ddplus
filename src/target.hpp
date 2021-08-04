@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <string>
+#include <unistd.h>
 
 class target{
 public:
@@ -23,6 +24,8 @@ private:
     std::size_t preamble_;
     std::size_t length_;
 
+    static ssize_t write(int fd, const void* buf, size_t count);
+    static ssize_t read(int fd, void* buf, size_t count);
     static void close(int*);
 
     const static long page_size_;

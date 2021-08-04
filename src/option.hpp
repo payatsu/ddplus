@@ -16,7 +16,7 @@ struct transfer{
 };
 
 struct param{
-    param() = default;
+    param(): transfers(){}
 
     std::vector<transfer> transfers;
 };
