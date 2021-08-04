@@ -11,7 +11,7 @@ target::target(const char* filename, std::size_t offset, std::size_t length)
 : ptr_to_fd_(new int(open(filename, O_RDWR | O_CREAT, S_IRWXU | S_IRGRP | S_IROTH)), close),
 mmapped_data_(),
 preamble_(),
-pa_length_()
+length_()
 {
     if(*ptr_to_fd_ == -1){
         ERROR_THROW("", filename);
@@ -45,13 +45,13 @@ pa_length_()
 
     const std::size_t pa_offset = offset & ~(static_cast<std::size_t>(page_size_) - 1);
     preamble_ = offset - pa_offset;
-    pa_length_ = length + preamble_;
+    length_ = length;
 
     if(length == 0){
         return;
     }
 
-    void* m = mmap(nullptr, pa_length_,
+    void* m = mmap(nullptr, preamble_ + length_,
             PROT_READ | PROT_WRITE, MAP_SHARED, *ptr_to_fd_,
             static_cast<off_t>(offset & ~(
                     static_cast<std::size_t>(page_size_) - 1)));
@@ -61,14 +61,14 @@ pa_length_()
     }
 
     mmapped_data_.reset(reinterpret_cast<char*>(m),
-            [this](char* p){munmap(p, this->pa_length_);});
+            [&](char* p){munmap(p, preamble_ + length_);});
 }
 
 target::target(int fd)
 : ptr_to_fd_(new int(fd), [](int*){/* do nothing. */}),
 mmapped_data_(),
 preamble_(),
-pa_length_()
+length_()
 {}
 
 int target::transfer_to(const target& dest)const

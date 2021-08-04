@@ -14,13 +14,13 @@ public:
 
     // deprecated.
     char* offset()const{return mmapped_data_.get() + preamble_;}
-    std::size_t length()const{return pa_length_ - preamble_;}
+    std::size_t length()const{return length_;}
 
 private:
     std::shared_ptr<int> ptr_to_fd_;
     std::shared_ptr<char> mmapped_data_;
     std::size_t preamble_;
-    std::size_t pa_length_;
+    std::size_t length_;
 
     static void close(int*);
 
