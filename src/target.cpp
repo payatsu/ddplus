@@ -4,6 +4,7 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include "common.hpp"
 #include "misc.hpp"
 
 const long target::page_size_ = sysconf(_SC_PAGESIZE);
@@ -73,13 +74,13 @@ length_(),
 page_offset_()
 {}
 
-int target::transfer_to(const target& dest, bool hexdump_enabled)const
+int target::transfer_to(const target& dest, const param& prm)const
 {
     if(mmapped_data_){
         if(dest.mmapped_data_){
             std::memcpy(dest.offset(), offset(), std::min(length(), dest.length()));
         }else{
-            if(hexdump_enabled){
+            if(prm.hexdump_enabled){
                 if(hexdump(*dest.ptr_to_fd_) != 0){
                     ERROR("", "hexdump");
                 }

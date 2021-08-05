@@ -4,6 +4,7 @@
 #endif
 #include "gtest/gtest.h"
 
+#include "common.hpp"
 #include "option.hpp"
 #include "target.hpp"
 
@@ -144,6 +145,8 @@ TEST(TargetTest, ConstructionTest)
 
 TEST(TargetTest, TransferTest)
 {
+    param prm;
+
     // from: memory mapped file
     // to  : memory mapped file
     {
@@ -153,19 +156,19 @@ TEST(TargetTest, TransferTest)
         }
 
         target dst_just("/dev/zero", 0, 8);
-        EXPECT_EQ(src.transfer_to(dst_just), 0);
+        EXPECT_EQ(src.transfer_to(dst_just, prm), 0);
         for(std::size_t i = 0; i < dst_just.length(); ++i){
             EXPECT_EQ(dst_just.offset()[i], '\xff');
         }
 
         target dst_short("/dev/zero", 0, 4);
-        EXPECT_EQ(src.transfer_to(dst_short), 0);
+        EXPECT_EQ(src.transfer_to(dst_short, prm), 0);
         for(std::size_t i = 0; i < dst_short.length(); ++i){
             EXPECT_EQ(dst_short.offset()[i], '\xff');
         }
 
         target dst_wide("/dev/zero", 0, 16);
-        EXPECT_EQ(src.transfer_to(dst_wide), 0);
+        EXPECT_EQ(src.transfer_to(dst_wide, prm), 0);
         for(std::size_t i = 0; i < src.length(); ++i){
             EXPECT_EQ(dst_wide.offset()[i], '\xff');
         }
@@ -181,7 +184,7 @@ TEST(TargetTest, TransferTest)
         unlink(dst_file);
 
         target src("/dev/zero", 0, 4096);
-        EXPECT_EQ(src.transfer_to(target(dst_file)), 0);
+        EXPECT_EQ(src.transfer_to(target(dst_file), prm), 0);
         target dst(dst_file);
         EXPECT_EQ(dst.length(), src.length());
         EXPECT_EQ(dst.offset()[0], src.offset()[0]);
@@ -203,14 +206,14 @@ TEST(TargetTest, TransferTest)
 
         write(fd[1], buf, size);
         target dst_just("/dev/zero", 0, size);
-        EXPECT_EQ(src.transfer_to(dst_just), 0);
+        EXPECT_EQ(src.transfer_to(dst_just, prm), 0);
         EXPECT_EQ(dst_just.offset()[       0], 'a');
         EXPECT_EQ(dst_just.offset()[       1], 'b');
         EXPECT_EQ(dst_just.offset()[size - 1], 'h');
 
         write(fd[1], buf, size);
         target dst_short("/dev/zero", 0, size / 2);
-        EXPECT_EQ(src.transfer_to(dst_short), 0);
+        EXPECT_EQ(src.transfer_to(dst_short, prm), 0);
         EXPECT_EQ(dst_short.offset()[0], 'a');
         EXPECT_EQ(dst_short.offset()[1], 'b');
         EXPECT_EQ(dst_short.offset()[3], 'd');
@@ -219,7 +222,7 @@ TEST(TargetTest, TransferTest)
         write(fd[1], buf, size);
         close(fd[1]);
         target dst_wide("/dev/zero", 0, size * 2);
-        EXPECT_EQ(src.transfer_to(dst_wide), 0);
+        EXPECT_EQ(src.transfer_to(dst_wide, prm), 0);
         EXPECT_EQ(dst_wide.offset()[       0], 'a');
         EXPECT_EQ(dst_wide.offset()[       1], 'b');
         EXPECT_EQ(dst_wide.offset()[size - 1], 'h');
@@ -241,7 +244,7 @@ TEST(TargetTest, TransferTest)
         const char* dst_file = "out.bin";
         unlink(dst_file);
 
-        EXPECT_EQ(src.transfer_to(target(dst_file)), 0);
+        EXPECT_EQ(src.transfer_to(target(dst_file), prm), 0);
         target dst(dst_file);
         EXPECT_EQ(dst.length(), static_cast<std::size_t>(size));
         EXPECT_EQ(dst.offset()[0], 'a');

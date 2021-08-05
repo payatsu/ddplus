@@ -12,7 +12,7 @@ int main(int argc, char* argv[])
     try{
         std::shared_ptr<param> param = option_parser(argc, argv).parse_cmdopt();
         for(const auto& [src, dst]: param->transfers){
-            src->transfer_to(*dst, param->hexdump_enabled);
+            src->transfer_to(*dst, *param);
         }
     }catch(const std::runtime_error&){
         ; // do nothing.

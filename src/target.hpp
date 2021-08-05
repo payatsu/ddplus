@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <unistd.h>
+#include "fwd.hpp"
 
 enum class target_role{
     SRC,
@@ -17,7 +18,7 @@ public:
     target(const target&) = default;
     ~target(){}
 
-    int transfer_to(const target& dest, bool hexdump_enabled = false)const;
+    int transfer_to(const target& dest, const param& prm)const;
 
     // deprecated.
     char* offset()const{return mmapped_data_.get() + page_offset_;}
