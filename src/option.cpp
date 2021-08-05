@@ -3,6 +3,7 @@
 #include <regex>
 #include <getopt.h>
 #include <unistd.h>
+#include "common.hpp"
 #include "misc.hpp"
 #include "target.hpp"
 
@@ -19,9 +20,9 @@
 option_parser::option_parser(int argc, char* argv[])
 : argc_(argc), argv_(argv) {}
 
-param option_parser::parse_cmdopt()const
+std::shared_ptr<param> option_parser::parse_cmdopt()const
 {
-    param param;
+    std::shared_ptr<param> prm = std::make_shared<param>();
 
     while(true){
         opterr = 0;
@@ -39,7 +40,7 @@ param option_parser::parse_cmdopt()const
         }
 
         switch(c){
-        case 'd': param.hexdump_enabled = true; break;
+        case 'd': prm->hexdump_enabled = true; break;
         case 'h': break;
         case 'v': break;
         case '?':
@@ -53,10 +54,10 @@ param option_parser::parse_cmdopt()const
     }
 
     for(int i = optind; i < argc_; ++i){
-        param.transfers.emplace_back(to_transfer(argv_[i]));
+        prm->transfers.emplace_back(to_transfer(argv_[i]));
     }
 
-    return param;
+    return prm;
 }
 
 transfer option_parser::to_transfer(const std::string& spec)const

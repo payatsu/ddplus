@@ -2,20 +2,17 @@
 #include "config.h"
 #endif
 
-#include <fcntl.h>
-#include <sys/mman.h>
-#include <unistd.h>
-
-#include "misc.hpp"
+#include <stdexcept>
+#include "common.hpp"
 #include "option.hpp"
 #include "target.hpp"
 
 int main(int argc, char* argv[])
 {
     try{
-        param param = option_parser(argc, argv).parse_cmdopt();
-        for(const auto& [src, dst]: param.transfers){
-            src->transfer_to(*dst, param.hexdump_enabled);
+        std::shared_ptr<param> param = option_parser(argc, argv).parse_cmdopt();
+        for(const auto& [src, dst]: param->transfers){
+            src->transfer_to(*dst, param->hexdump_enabled);
         }
     }catch(const std::runtime_error&){
         ; // do nothing.

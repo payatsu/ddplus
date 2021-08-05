@@ -1,5 +1,6 @@
 bin_PROGRAMS = ddplus
 ddplus_SOURCES = \
+	common.hpp \
 	ddplus.cpp \
 	fwd.hpp \
 	misc.hpp \
