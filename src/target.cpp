@@ -158,29 +158,34 @@ int target::hexdump(int fd)const
     "---------------- -----------------------------------  -----------------\n");
 
     const char* p = mmapped_data_.get();
-    std::size_t column_heading = offset_ - page_offset_;
+    std::size_t column_heading = offset_ & ~0xful;
+    bool needs_column_print = true;
 
     char ascii[0x11] = {}; // also contains termination character '\0'.
 
-    for(std::size_t i = 0; i < page_offset_ + length_; ++i){
+    for(std::size_t i = page_offset_ & ~0xful; i < page_offset_ + length_; ++i){
 
-
-        // TODO: 読み飛ばし部分の処理を作る。
-
-        if((i & 0xf) == 0x0){
+        if(needs_column_print){
             SNPRINTF(fd, buff.get(), buff_size, write_count, "%016lx", column_heading);
             column_heading += 0x10;
+            needs_column_print = false;
         }
 
         if((i & 0x3) == 0x0){
             SNPRINTF(fd, buff.get(), buff_size, write_count, " ");
         }
 
-        SNPRINTF(fd, buff.get(), buff_size, write_count, "%02x", static_cast<unsigned int>(p[i] & 0xff));
-        ascii[i & 0xf] = std::isprint(p[i]) ? p[i] : '.';
+        if(i < page_offset_){
+            SNPRINTF(fd, buff.get(), buff_size, write_count, "  ");
+            ascii[i & 0xf] = ' ';
+        }else{
+            SNPRINTF(fd, buff.get(), buff_size, write_count, "%02x", static_cast<unsigned int>(p[i] & 0xff));
+            ascii[i & 0xf] = std::isprint(p[i]) ? p[i] : '.';
+        }
 
         if((i & 0xf) == 0xf){
             SNPRINTF(fd, buff.get(), buff_size, write_count, " >%s<\n", ascii);
+            needs_column_print = true;
             std::memset(ascii, '\0', sizeof(ascii));
         }
     }
