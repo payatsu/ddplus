@@ -161,7 +161,9 @@ int target::hexdump(int fd)const
     std::size_t column_heading = offset_ & ~0xful;
     bool needs_column_print = true;
 
-    char ascii[0x11] = {}; // also contains termination character '\0'.
+    // this contains space not only for termination character '\0',
+    // but also for preceeding character '>'.
+    char ascii[0x10 + 2] = {'>'};
 
     for(std::size_t i = page_offset_ & ~0xful; i < page_offset_ + length_; ++i){
 
@@ -177,16 +179,18 @@ int target::hexdump(int fd)const
 
         if(i < page_offset_){
             SNPRINTF(fd, buff.get(), buff_size, write_count, "  ");
-            ascii[i & 0xf] = ' ';
+            ascii[(i & 0xf)    ] = ' ';
+            ascii[(i & 0xf) + 1] = '>';
         }else{
             SNPRINTF(fd, buff.get(), buff_size, write_count, "%02x", static_cast<unsigned int>(p[i] & 0xff));
-            ascii[i & 0xf] = std::isprint(p[i]) ? p[i] : '.';
+            ascii[(i & 0xf) + 1] = std::isprint(p[i]) ? p[i] : '.';
         }
 
         if((i & 0xf) == 0xf){
-            SNPRINTF(fd, buff.get(), buff_size, write_count, " >%s<\n", ascii);
-            needs_column_print = true;
+            SNPRINTF(fd, buff.get(), buff_size, write_count, " %s<\n", ascii);
             std::memset(ascii, '\0', sizeof(ascii));
+            ascii[0] = '>';
+            needs_column_print = true;
         }
     }
 
@@ -195,8 +199,8 @@ int target::hexdump(int fd)const
             + ((~(page_offset_ + length_ -1)) >> 2 & 0x3); ++i){
         SNPRINTF(fd, buff.get(), buff_size, write_count, " ");
     }
-    if(ascii[0]){
-        SNPRINTF(fd, buff.get(), buff_size, write_count, " >%s<\n", ascii);
+    if(ascii[1]){
+        SNPRINTF(fd, buff.get(), buff_size, write_count, " %s<\n", ascii);
     }
 
     if(0 < write_count){
