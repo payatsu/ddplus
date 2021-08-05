@@ -16,8 +16,11 @@ struct transfer{
 };
 
 struct param{
-    param(): transfers(){}
+    param():
+        hexdump_enabled(),
+        transfers(){}
 
+    bool hexdump_enabled;
     std::vector<transfer> transfers;
 };
 

@@ -12,7 +12,7 @@ public:
     target(const target&) = default;
     ~target(){}
 
-    int transfer_to(const target& dest)const;
+    int transfer_to(const target& dest, bool hexdump_enabled = false)const;
 
     // deprecated.
     char* offset()const{return mmapped_data_.get() + page_offset_;}
@@ -25,8 +25,10 @@ private:
     std::size_t length_;
     std::size_t page_offset_;
 
-    static ssize_t write(int fd, const void* buf, size_t count);
+    int hexdump(int fd)const;
+
     static ssize_t read(int fd, void* buf, size_t count);
+    static ssize_t write(int fd, const void* buf, size_t count);
     static void close(int*);
 
     const static long page_size_;

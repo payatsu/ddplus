@@ -21,21 +21,25 @@ option_parser::option_parser(int argc, char* argv[])
 
 param option_parser::parse_cmdopt()const
 {
+    param param;
+
     while(true){
         opterr = 0;
         int option_index = 0;
         option longopts[] = {
             {"help",    no_argument, nullptr, 'h'},
             {"verbose", no_argument, nullptr, 'v'},
+            {"hexdump", no_argument, nullptr, 'd'},
             {}
         };
 
-        int c = getopt_long(argc_, argv_, "hv", longopts, &option_index);
+        int c = getopt_long(argc_, argv_, "dhv", longopts, &option_index);
         if(c == -1){
             break;
         }
 
         switch(c){
+        case 'd': param.hexdump_enabled = true; break;
         case 'h': break;
         case 'v': break;
         case '?':
@@ -48,7 +52,6 @@ param option_parser::parse_cmdopt()const
         }
     }
 
-    param param;
     for(int i = optind; i < argc_; ++i){
         param.transfers.emplace_back(to_transfer(argv_[i]));
     }
