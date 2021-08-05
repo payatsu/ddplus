@@ -149,18 +149,18 @@ int target::transfer_to(const target& dest, bool hexdump_enabled)const
 
 int target::hexdump(int fd)const
 {
-    const char* p = mmapped_data_.get();
-    std::size_t column_heading = offset_ - page_offset_;
-
     const std::size_t buff_size = static_cast<std::size_t>(page_size_) * 20ul;
     std::shared_ptr<char[]> buff(new char[buff_size]);
     std::size_t write_count = 0;
 
     SNPRINTF(fd, buff.get(), buff_size, write_count,
-    "                 0        4        8        c       \n"
-    "                 -----------------------------------\n");
+    "Offset           0        4        8        c         ASCII\n"
+    "---------------- -----------------------------------  -----------------\n");
 
-    char chars[0x11] = {}; // also contains termination character '\0'.
+    const char* p = mmapped_data_.get();
+    std::size_t column_heading = offset_ - page_offset_;
+
+    char ascii[0x11] = {}; // also contains termination character '\0'.
 
     for(std::size_t i = 0; i < page_offset_ + length_; ++i){
 
@@ -177,11 +177,11 @@ int target::hexdump(int fd)const
         }
 
         SNPRINTF(fd, buff.get(), buff_size, write_count, "%02x", static_cast<unsigned int>(p[i] & 0xff));
-        chars[i & 0xf] = std::isprint(p[i]) ? p[i] : '.';
+        ascii[i & 0xf] = std::isprint(p[i]) ? p[i] : '.';
 
         if((i & 0xf) == 0xf){
-            SNPRINTF(fd, buff.get(), buff_size, write_count, " >%s<", chars);
-            std::memset(chars, '\0', sizeof(chars));
+            SNPRINTF(fd, buff.get(), buff_size, write_count, " >%s<", ascii);
+            std::memset(ascii, '\0', sizeof(ascii));
             SNPRINTF(fd, buff.get(), buff_size, write_count, "\n");
         }
     }
@@ -191,7 +191,9 @@ int target::hexdump(int fd)const
             + ((~(page_offset_ + length_ -1)) >> 2 & 0x3); ++i){
         SNPRINTF(fd, buff.get(), buff_size, write_count, " ");
     }
-    SNPRINTF(fd, buff.get(), buff_size, write_count, " >%s<\n", chars);
+    if(ascii[0]){
+        SNPRINTF(fd, buff.get(), buff_size, write_count, " >%s<\n", ascii);
+    }
 
     if(0 < write_count){
         ssize_t ret = write(fd, buff.get(), write_count);
