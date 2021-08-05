@@ -1,7 +1,6 @@
 #include "target.hpp"
 #include <cctype>
 #include <cstdio>
-#include <cstring>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>

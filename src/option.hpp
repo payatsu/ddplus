@@ -47,7 +47,7 @@ public:
     void parse_range(const std::string& str, range& range)const;
 
 private:
-    static std::size_t to_number(char c);
+    static std::size_t to_number(char suffix);
 
 private:
     int argc_;

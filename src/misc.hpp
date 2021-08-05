@@ -5,7 +5,6 @@
 #include <cstring>
 #include <stdexcept>
 #include <iostream>
-#include <string>
 
 #define ERROR_BASE(progname, message, finish) \
     do{ \

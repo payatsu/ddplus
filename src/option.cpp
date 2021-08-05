@@ -1,7 +1,6 @@
 #include "option.hpp"
 
 #include <regex>
-#include <fcntl.h>
 #include <getopt.h>
 #include <unistd.h>
 #include "misc.hpp"
@@ -115,10 +114,10 @@ void option_parser::parse_range(const std::string& str, range& range)const
     }
 }
 
-std::size_t option_parser::to_number(char c)
+std::size_t option_parser::to_number(char suffix)
 {
     std::size_t n = 1u;
-    switch(c){
+    switch(suffix){
     case 'k': case 'K': n <<= 10; break;
     case 'm': case 'M': n <<= 20; break;
     case 'g': case 'G': n <<= 30; break;

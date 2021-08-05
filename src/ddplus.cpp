@@ -14,7 +14,7 @@ int main(int argc, char* argv[])
 {
     try{
         param param = option_parser(argc, argv).parse_cmdopt();
-        for(auto [src, dst]: param.transfers){
+        for(const auto& [src, dst]: param.transfers){
             src.transfer_to(dst, param.hexdump_enabled);
         }
     }catch(const std::runtime_error&){
