@@ -1,6 +1,7 @@
 bin_PROGRAMS = ddplus
 ddplus_SOURCES = \
 	ddplus.cpp \
+	fwd.hpp \
 	misc.hpp \
 	option.hpp \
 	option.cpp \

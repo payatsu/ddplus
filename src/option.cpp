@@ -69,7 +69,7 @@ transfer option_parser::to_transfer(const std::string& spec)const
     };
 }
 
-std::shared_ptr<target> option_parser::to_target(const std::string& spec, target_role role)const
+std::shared_ptr<target> option_parser::to_target(const std::string& spec, const target_role& role)const
 {
     try{
         std::size_t offset;

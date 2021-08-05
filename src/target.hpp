@@ -5,6 +5,11 @@
 #include <string>
 #include <unistd.h>
 
+enum class target_role{
+    SRC,
+    DST,
+};
+
 class target{
 public:
     target(const std::string& filename, std::size_t offset = 0ul, std::size_t length = 0ul);

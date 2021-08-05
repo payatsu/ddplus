@@ -9,8 +9,7 @@
 #include <memory>
 #include <string>
 #include <vector>
-
-class target;
+#include "fwd.hpp"
 
 struct transfer{
     std::shared_ptr<target> src;
@@ -26,11 +25,6 @@ struct param{
     std::vector<transfer> transfers;
 };
 
-enum class target_role{
-    SRC,
-    DST,
-};
-
 class option_parser{
 public:
     option_parser(int argc, char* argv[]);
@@ -38,7 +32,7 @@ public:
     param parse_cmdopt()const;
 
     transfer to_transfer(const std::string& spec)const;
-    std::shared_ptr<target> to_target(const std::string& spec, target_role role)const;
+    std::shared_ptr<target> to_target(const std::string& spec, const target_role& role)const;
 
     void parse_transfer(const std::string& str, std::string& src, std::string& dst)const;
     void parse_range(const std::string& str, std::size_t& offset, std::size_t& length)const;
