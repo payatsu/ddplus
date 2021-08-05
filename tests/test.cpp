@@ -51,44 +51,46 @@ TEST_F(ParseTest, ParseTransferTest)
 
 TEST_F(ParseTest, ParseRangeTest)
 {
-    range range;
-    EXPECT_NO_THROW(parser.parse_range("1@23", range));
-    EXPECT_EQ(range.length,  1u);
-    EXPECT_EQ(range.offset, 23u);
+    std::size_t offset;
+    std::size_t length;
+    EXPECT_NO_THROW(parser.parse_range("1@23", offset, length));
+    EXPECT_EQ(length,  1u);
+    EXPECT_EQ(offset, 23u);
 
-    EXPECT_NO_THROW(parser.parse_range("12@3", range));
-    EXPECT_EQ(range.length, 12u);
-    EXPECT_EQ(range.offset,  3u);
+    EXPECT_NO_THROW(parser.parse_range("12@3", offset, length));
+    EXPECT_EQ(length, 12u);
+    EXPECT_EQ(offset,  3u);
 
-    EXPECT_NO_THROW(parser.parse_range("123@456", range));
-    EXPECT_EQ(range.length, 123u);
-    EXPECT_EQ(range.offset, 456u);
+    EXPECT_NO_THROW(parser.parse_range("123@456", offset, length));
+    EXPECT_EQ(length, 123u);
+    EXPECT_EQ(offset, 456u);
 
-    EXPECT_NO_THROW(parser.parse_range("0xf@07", range));
-    EXPECT_EQ(range.length, 0xfu);
-    EXPECT_EQ(range.offset,  07u);
+    EXPECT_NO_THROW(parser.parse_range("0xf@07", offset, length));
+    EXPECT_EQ(length, 0xfu);
+    EXPECT_EQ(offset,  07u);
 
-    EXPECT_NO_THROW(parser.parse_range("0xff@077", range));
-    EXPECT_EQ(range.length, 0xffu);
-    EXPECT_EQ(range.offset,  077u);
+    EXPECT_NO_THROW(parser.parse_range("0xff@077", offset, length));
+    EXPECT_EQ(length, 0xffu);
+    EXPECT_EQ(offset,  077u);
 
-    EXPECT_NO_THROW(parser.parse_range("0xfff@0777", range));
-    EXPECT_EQ(range.length, 0xfffu);
-    EXPECT_EQ(range.offset,  0777u);
+    EXPECT_NO_THROW(parser.parse_range("0xfff@0777", offset, length));
+    EXPECT_EQ(length, 0xfffu);
+    EXPECT_EQ(offset,  0777u);
 
-    EXPECT_NO_THROW(parser.parse_range("1k@1G", range));
-    EXPECT_EQ(range.length, 1u << 10);
-    EXPECT_EQ(range.offset, 1u << 30);
+    EXPECT_NO_THROW(parser.parse_range("1k@1G", offset, length));
+    EXPECT_EQ(length, 1u << 10);
+    EXPECT_EQ(offset, 1u << 30);
 
-    EXPECT_NO_THROW(parser.parse_range("1M@1m", range));
-    EXPECT_EQ(range.length, 1u << 20);
-    EXPECT_EQ(range.offset, 1u << 20);
+    EXPECT_NO_THROW(parser.parse_range("1M@1m", offset, length));
+    EXPECT_EQ(length, 1u << 20);
+    EXPECT_EQ(offset, 1u << 20);
 
-    EXPECT_NO_THROW(parser.parse_range("1G@1K", range));
-    EXPECT_EQ(range.length, 1u << 30);
-    EXPECT_EQ(range.offset, 1u << 10);
+    EXPECT_NO_THROW(parser.parse_range("1G@1K", offset, length));
+    EXPECT_EQ(length, 1u << 30);
+    EXPECT_EQ(offset, 1u << 10);
 
-    EXPECT_THROW(parser.parse_range("an_illegal_notation", range), std::runtime_error);
+    EXPECT_THROW(parser.parse_range("an_illegal_notation",
+                offset, length), std::runtime_error);
 }
 
 TEST(TargetTest, ConstructionTest)

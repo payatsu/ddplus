@@ -24,11 +24,6 @@ struct param{
     std::vector<transfer> transfers;
 };
 
-struct range{
-    std::size_t offset;
-    std::size_t length;
-};
-
 enum class target_role{
     SRC,
     DST,
@@ -44,7 +39,7 @@ public:
     target to_target(const std::string& spec, target_role role)const;
 
     void parse_transfer(const std::string& str, std::string& src, std::string& dst)const;
-    void parse_range(const std::string& str, range& range)const;
+    void parse_range(const std::string& str, std::size_t& offset, std::size_t& length)const;
 
 private:
     static std::size_t to_number(char suffix);

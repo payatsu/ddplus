@@ -71,9 +71,10 @@ transfer option_parser::to_transfer(const std::string& spec)const
 target option_parser::to_target(const std::string& spec, target_role role)const
 {
     try{
-        range r;
-        parse_range(spec, r);
-        return target("/dev/mem", r.offset, r.length);
+        std::size_t offset;
+        std::size_t length;
+        parse_range(spec, offset, length);
+        return target("/dev/mem", offset, length);
     }catch(const std::runtime_error&){
         if(spec == "-"){
             return target(role == target_role::SRC ? STDIN_FILENO : STDOUT_FILENO);
@@ -94,7 +95,7 @@ void option_parser::parse_transfer(const std::string& str, std::string& src, std
     dst = m.str(2);
 }
 
-void option_parser::parse_range(const std::string& str, range& range)const
+void option_parser::parse_range(const std::string& str, std::size_t& offset, std::size_t& length)const
 {
     std::smatch m;
     if(!std::regex_match(str, m, std::regex(REGEX_RANGE("")))){
@@ -104,13 +105,13 @@ void option_parser::parse_range(const std::string& str, range& range)const
 
     std::size_t idx;
 
-    range.length = std::stoul(m.str(1), &idx, 0);
+    length = std::stoul(m.str(1), &idx, 0);
     if(idx < m.str(1).size()){
-        range.length *= to_number(m.str(1).at(idx));
+        length *= to_number(m.str(1).at(idx));
     }
-    range.offset = std::stoul(m.str(2), &idx, 0);
+    offset = std::stoul(m.str(2), &idx, 0);
     if(idx < m.str(2).size()){
-        range.offset *= to_number(m.str(2).at(idx));
+        offset *= to_number(m.str(2).at(idx));
     }
 }
 
