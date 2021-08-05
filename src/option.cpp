@@ -4,6 +4,7 @@
 #include <getopt.h>
 #include <unistd.h>
 #include "misc.hpp"
+#include "target.hpp"
 
 #define REGEX_RANGE(capgrp) \
     "(" capgrp "(?:[[:digit:]]+|0x[[:xdigit:]]+)[kmgKMG]?)" "@" \
@@ -68,18 +69,18 @@ transfer option_parser::to_transfer(const std::string& spec)const
     };
 }
 
-target option_parser::to_target(const std::string& spec, target_role role)const
+std::shared_ptr<target> option_parser::to_target(const std::string& spec, target_role role)const
 {
     try{
         std::size_t offset;
         std::size_t length;
         parse_range(spec, offset, length);
-        return target("/dev/mem", offset, length);
+        return std::make_shared<target>("/dev/mem", offset, length);
     }catch(const std::runtime_error&){
         if(spec == "-"){
-            return target(role == target_role::SRC ? STDIN_FILENO : STDOUT_FILENO);
+            return std::make_shared<target>(role == target_role::SRC ? STDIN_FILENO : STDOUT_FILENO);
         }
-        return target(spec);
+        return std::make_shared<target>(spec);
     }
 }
 
