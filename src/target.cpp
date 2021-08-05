@@ -180,9 +180,8 @@ int target::hexdump(int fd)const
         ascii[i & 0xf] = std::isprint(p[i]) ? p[i] : '.';
 
         if((i & 0xf) == 0xf){
-            SNPRINTF(fd, buff.get(), buff_size, write_count, " >%s<", ascii);
+            SNPRINTF(fd, buff.get(), buff_size, write_count, " >%s<\n", ascii);
             std::memset(ascii, '\0', sizeof(ascii));
-            SNPRINTF(fd, buff.get(), buff_size, write_count, "\n");
         }
     }
 
