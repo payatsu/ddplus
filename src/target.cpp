@@ -78,14 +78,14 @@ int target::transfer_to(const target& dest, const param& prm)const
 {
     if(mmapped_data_){
         if(dest.mmapped_data_){
-            std::memcpy(dest.offset(), offset(), std::min(length(), dest.length()));
+            std::memcpy(dest.offset(), offset(), std::min(length_, dest.length_));
         }else{
             if(prm.hexdump_enabled){
                 if(hexdump(*dest.ptr_to_fd_) != 0){
                     ERROR("", "hexdump");
                 }
             }else{
-                ssize_t w_ret = write(*dest.ptr_to_fd_, offset(), length());
+                ssize_t w_ret = write(*dest.ptr_to_fd_, offset(), length_);
                 if(w_ret == -1){
                     ERROR("", "write");
                 }
@@ -103,12 +103,12 @@ int target::transfer_to(const target& dest, const param& prm)const
             }
             std::size_t r = static_cast<std::size_t>(r_ret);
             if(dest.mmapped_data_){
-                if(dest.length() < transfer_count + r){
-                    r = dest.length() - transfer_count;
+                if(dest.length_ < transfer_count + r){
+                    r = dest.length_ - transfer_count;
                 }
                 std::memcpy(dest.offset() + transfer_count, buff.get(), r);
                 transfer_count += r;
-                if(dest.length() <= transfer_count){
+                if(dest.length_ <= transfer_count){
                     break;
                 }
             }else{
