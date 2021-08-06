@@ -81,7 +81,7 @@ int target::transfer_to(const target& dest, const param& prm)const
             std::memcpy(dest.offset(), offset(), std::min(length_, dest.length_));
         }else{
             if(prm.hexdump_enabled){
-                if(hexdump(*dest.ptr_to_fd_) != 0){
+                if(hexdump(*dest.ptr_to_fd_, mmapped_data_.get(), offset_, length_, page_offset_) != 0){
                     ERROR("", "hexdump");
                 }
             }else{
@@ -147,7 +147,8 @@ int target::transfer_to(const target& dest, const param& prm)const
         } \
     }while(false)
 
-int target::hexdump(int fd)const
+int target::hexdump(int fd, const char* data, std::size_t offset,
+        std::size_t length, std::size_t page_offset)
 {
     const std::size_t buff_size = static_cast<std::size_t>(page_size_) * 20ul;
     std::shared_ptr<char[]> buff(new char[buff_size]);
@@ -157,15 +158,14 @@ int target::hexdump(int fd)const
     "Offset           0        4        8        c         ASCII\n"
     "---------------- -----------------------------------  -----------------\n");
 
-    const char* p = mmapped_data_.get();
-    std::size_t column_heading = offset_ & ~0xful;
+    std::size_t column_heading = offset & ~0xful;
     bool needs_column_print = true;
 
     // this contains space not only for termination character '\0',
     // but also for preceeding character '>'.
     char ascii[0x10 + 2] = {'>'};
 
-    for(std::size_t i = page_offset_ & ~0xful; i < page_offset_ + length_; ++i){
+    for(std::size_t i = page_offset & ~0xful; i < page_offset + length; ++i){
 
         if(needs_column_print){
             SNPRINTF(fd, buff.get(), buff_size, write_count, "%016lx", column_heading);
@@ -177,13 +177,13 @@ int target::hexdump(int fd)const
             SNPRINTF(fd, buff.get(), buff_size, write_count, " ");
         }
 
-        if(i < page_offset_){
+        if(i < page_offset){
             SNPRINTF(fd, buff.get(), buff_size, write_count, "  ");
             ascii[(i & 0xf)    ] = ' ';
             ascii[(i & 0xf) + 1] = '>';
         }else{
-            SNPRINTF(fd, buff.get(), buff_size, write_count, "%02x", static_cast<unsigned int>(p[i] & 0xff));
-            ascii[(i & 0xf) + 1] = std::isprint(p[i]) ? p[i] : '.';
+            SNPRINTF(fd, buff.get(), buff_size, write_count, "%02x", static_cast<unsigned int>(data[i] & 0xff));
+            ascii[(i & 0xf) + 1] = std::isprint(data[i]) ? data[i] : '.';
         }
 
         if((i & 0xf) == 0xf){
@@ -195,8 +195,8 @@ int target::hexdump(int fd)const
     }
 
     for(std::size_t i = 0;
-            i < 2 * (~(page_offset_ + length_ -1) & 0xf)
-            + ((~(page_offset_ + length_ -1)) >> 2 & 0x3); ++i){
+            i < 2 * (~(page_offset + length -1) & 0xf)
+            + ((~(page_offset + length -1)) >> 2 & 0x3); ++i){
         SNPRINTF(fd, buff.get(), buff_size, write_count, " ");
     }
     if(ascii[1]){
