@@ -12,9 +12,11 @@ struct transfer{
 
 struct param{
     param():
+        width(32),
         hexdump_enabled(),
         transfers(){}
 
+    int width;
     bool hexdump_enabled;
     std::vector<transfer> transfers;
 };

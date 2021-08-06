@@ -28,13 +28,14 @@ std::shared_ptr<param> option_parser::parse_cmdopt()const
         opterr = 0;
         int option_index = 0;
         option longopts[] = {
-            {"help",    no_argument, nullptr, 'h'},
-            {"verbose", no_argument, nullptr, 'v'},
-            {"hexdump", no_argument, nullptr, 'd'},
+            {"help",          no_argument, nullptr, 'h'},
+            {"verbose",       no_argument, nullptr, 'v'},
+            {"hexdump",       no_argument, nullptr, 'd'},
+            {"width",   required_argument, nullptr, 'w'},
             {}
         };
 
-        int c = getopt_long(argc_, argv_, "dhv", longopts, &option_index);
+        int c = getopt_long(argc_, argv_, "dhvw:", longopts, &option_index);
         if(c == -1){
             break;
         }
@@ -43,6 +44,23 @@ std::shared_ptr<param> option_parser::parse_cmdopt()const
         case 'd': prm->hexdump_enabled = true; break;
         case 'h': break;
         case 'v': break;
+        case 'w':
+            try{
+                prm->width = static_cast<decltype(prm->width)>(std::stol(optarg));
+            }catch(const std::exception& e){
+                errno = EINVAL;
+                ERROR_THROW(argv_[0], std::string("can't convert to number: '")
+                        + optarg + "'");
+            }
+            switch(prm->width){
+            case 8: case 16: case 32: case 64: break;
+            default:
+                errno = EINVAL;
+                ERROR_THROW(argv_[0], std::string("invalid value: ")
+                        + std::to_string(prm->width));
+                break;
+            }
+            break;
         case '?':
             errno = EINVAL;
             ERROR_THROW(argv_[0], std::string("unknown option: '")

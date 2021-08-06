@@ -2,7 +2,7 @@
 #include "config.h"
 #endif
 
-#include <stdexcept>
+#include <exception>
 #include "common.hpp"
 #include "option.hpp"
 #include "target.hpp"
@@ -14,7 +14,7 @@ int main(int argc, char* argv[])
         for(const auto& [src, dst]: param->transfers){
             src->transfer_to(*dst, *param);
         }
-    }catch(const std::runtime_error&){
+    }catch(const std::exception&){
         ; // do nothing.
     }
 
