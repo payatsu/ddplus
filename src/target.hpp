@@ -33,6 +33,8 @@ private:
 
     static int hexdump(int fd, const char* data, std::size_t offset,
             std::size_t length, std::size_t page_offset, int width);
+    static std::uint64_t fetch(const void* p, int width);
+
     static ssize_t read(int fd, void* buf, size_t count);
     static ssize_t write(int fd, const void* buf, size_t count);
     static void close(int*);

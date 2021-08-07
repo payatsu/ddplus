@@ -157,28 +157,25 @@ int target::hexdump(int fd, const char* data, std::size_t offset,
     std::size_t write_count = 0;
 
     SNPRINTF(fd, b, bufsize, write_count,
-    "Offset           0        4        8        c         ASCII\n"
-    "---------------- -----------------------------------  -----------------\n");
+    "Offset           0       %s4        8       %sc         ASCII\n"
+    "---------------- --------%s-----------------%s--------  -----------------\n",
+    width < 64 ? " ": "", width < 64 ? " ": "",
+    width < 64 ? " ": "", width < 64 ? " ": "");
 
     std::size_t column_heading = offset & ~0xful;
-    bool needs_column_print = true;
+    bool needs_column_heading_print = true;
 
     // this contains space not only for termination character '\0',
     // but also for preceeding character '>'.
     char ascii[0x10 + 2] = {'>'};
 
-    std::uint64_t mask = 0;
-    for(int i = 0; i < width; ++i){
-        mask |= 1u << i;
-    }
-
     for(std::size_t i = page_offset & ~0xful; i < page_offset + length;
             i += static_cast<std::size_t>(width) / 8){
 
-        if(needs_column_print){
+        if(needs_column_heading_print){
             SNPRINTF(fd, b, bufsize, write_count, "%016lx", column_heading);
             column_heading += 0x10;
-            needs_column_print = false;
+            needs_column_heading_print = false;
         }
 
         if((i & 0x3) == 0x0){
@@ -190,12 +187,7 @@ int target::hexdump(int fd, const char* data, std::size_t offset,
             ascii[(i & 0xf)    ] = ' ';
             ascii[(i & 0xf) + 1] = '>';
         }else{
-            // TODO: endian conversion
-
-            if(32 < width){
-            }else{
-                SNPRINTF(fd, b, bufsize, write_count, "%0*lx", width / 4, *reinterpret_cast<const decltype(mask)*>(data + i) & mask);
-            }
+            SNPRINTF(fd, b, bufsize, write_count, "%0*lx", width / 4, fetch(data + i, width));
             for(std::size_t j = 0; j < static_cast<std::size_t>(width) / 8; ++j){
                 ascii[((i + j) & 0xf) + 1] = std::isprint(data[i + j]) ? data[i + j] : '.';
             }
@@ -205,7 +197,7 @@ int target::hexdump(int fd, const char* data, std::size_t offset,
             SNPRINTF(fd, b, bufsize, write_count, " %s<\n", ascii);
             std::memset(ascii, '\0', sizeof(ascii));
             ascii[0] = '>';
-            needs_column_print = true;
+            needs_column_heading_print = true;
         }
     }
 
@@ -225,6 +217,34 @@ int target::hexdump(int fd, const char* data, std::size_t offset,
         }
     }
     return 0;
+}
+
+std::uint64_t target::fetch(const void* p, int width)
+{
+    std::uint64_t mask = 0;
+    std::uint64_t ret = 0;
+    switch(width){
+    case 8:
+        mask = 0x00000000000000ff;
+        ret = *reinterpret_cast<const std::uint8_t*>(p) & mask;
+        break;
+    case 16:
+        mask = 0x000000000000ffff;
+        ret = htobe16(*reinterpret_cast<const std::uint16_t*>(p)) & mask;
+        break;
+    case 32:
+        mask = 0x00000000ffffffff;
+        ret = htobe32(*reinterpret_cast<const std::uint32_t*>(p)) & mask;
+        break;
+    case 64:
+        mask = 0xffffffffffffffff;
+        ret = htobe64(*reinterpret_cast<const std::uint64_t*>(p)) & mask;
+        break;
+    default:
+        ERROR_THROW("", std::string("unsupported bit width: ") + std::to_string(width));
+        break;
+    }
+    return ret;
 }
 
 ssize_t target::read(int fd, void* buf, size_t count)

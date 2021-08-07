@@ -30,7 +30,7 @@ AC_TYPE_SIZE_T
 
 # Checks for library functions.
 AC_FUNC_MMAP
-AC_CHECK_FUNCS([munmap strerror])
+AC_CHECK_FUNCS([munmap strerror htobe16 htobe32 htobe64])
 
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile])
