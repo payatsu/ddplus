@@ -160,7 +160,7 @@ int target::hexdump(int fd, const char* data, std::size_t offset,
     "Offset           0       %s4        8       %sc         ASCII\n"
     "---------------- --------%s-----------------%s--------  -----------------\n",
     width < 64 ? " ": "", width < 64 ? " ": "",
-    width < 64 ? " ": "", width < 64 ? " ": "");
+    width < 64 ? "-": "", width < 64 ? "-": "");
 
     std::size_t column_heading = offset & ~0xful;
     bool needs_column_heading_print = true;
