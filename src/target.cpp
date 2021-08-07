@@ -169,8 +169,8 @@ int target::hexdump(int fd, const char* data, std::size_t offset,
     // but also for preceeding character '>'.
     char ascii[0x10 + 2] = {'>'};
 
-    for(std::size_t i = page_offset & ~0xful; i < page_offset + length;
-            i += static_cast<std::size_t>(width) / 8){
+    const std::size_t bytewise_width = static_cast<std::size_t>(width) / 8;
+    for(std::size_t i = page_offset & ~0xful; i < page_offset + length; i += bytewise_width){
 
         if(needs_column_heading_print){
             SNPRINTF(fd, b, bufsize, write_count, "%016lx", column_heading);
@@ -188,12 +188,12 @@ int target::hexdump(int fd, const char* data, std::size_t offset,
             ascii[(i & 0xf) + 1] = '>';
         }else{
             SNPRINTF(fd, b, bufsize, write_count, "%0*lx", width / 4, fetch(data + i, width));
-            for(std::size_t j = 0; j < static_cast<std::size_t>(width) / 8; ++j){
+            for(std::size_t j = 0; j < bytewise_width; ++j){
                 ascii[((i + j) & 0xf) + 1] = std::isprint(data[i + j]) ? data[i + j] : '.';
             }
         }
 
-        if(((i + static_cast<std::size_t>(width) / 8) & 0xf) == 0x0){
+        if(((i + bytewise_width) & 0xf) == 0x0){
             SNPRINTF(fd, b, bufsize, write_count, " %s<\n", ascii);
             std::memset(ascii, '\0', sizeof(ascii));
             ascii[0] = '>';
