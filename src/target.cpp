@@ -158,7 +158,7 @@ int target::hexdump(int fd, const char* data, std::size_t offset,
 
     SNPRINTF(fd, b, bufsize, write_count,
     "Offset           0       %s4        8       %sc         ASCII\n"
-    "---------------- --------%s-----------------%s--------  -----------------\n",
+    "---------------- --------%s-----------------%s--------  ----------------\n",
     width < 64 ? " ": "", width < 64 ? " ": "",
     width < 64 ? "-": "", width < 64 ? "-": "");
 
