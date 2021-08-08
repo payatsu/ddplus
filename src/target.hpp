@@ -35,11 +35,27 @@ private:
             std::size_t length, std::size_t page_offset, int width);
     static std::uint64_t fetch(const void* p, int width);
 
-    static ssize_t read(int fd, void* buf, size_t count);
-    static ssize_t write(int fd, const void* buf, size_t count);
-    static void close(int*);
-
     const static long page_size_;
+
+    class iohelper{
+    public:
+        iohelper(int fd, std::size_t size);
+        ~iohelper();
+
+        template <typename... Args>
+        int snprintf(const char* format, Args... args); // defined in .cpp file.
+
+    public:
+        static ssize_t read(int fd, void* buf, size_t count);
+        static ssize_t write(int fd, const void* buf, size_t count);
+        static void close(int*);
+
+    private:
+        const int fd_;
+        const std::size_t size_;
+        std::shared_ptr<char[]> buf_;
+        std::size_t count_;
+    };
 };
 
 #endif // TARGET_HPP_

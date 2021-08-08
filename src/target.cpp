@@ -11,7 +11,7 @@ const long target::page_size_ = sysconf(_SC_PAGESIZE);
 
 target::target(const std::string& filename, std::size_t offset, std::size_t length)
 : ptr_to_fd_(new int(open(filename.c_str(),O_RDWR | O_CREAT,
-                S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)), close),
+                S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)), iohelper::close),
 mmapped_data_(),
 offset_(offset),
 length_(length),
@@ -86,7 +86,7 @@ int target::transfer_to(const target& dest, const param& prm)const
                     ERROR("", "hexdump");
                 }
             }else{
-                ssize_t w_ret = write(*dest.ptr_to_fd_, offset(), length_);
+                ssize_t w_ret = iohelper::write(*dest.ptr_to_fd_, offset(), length_);
                 if(w_ret == -1){
                     ERROR("", "write");
                 }
@@ -98,7 +98,7 @@ int target::transfer_to(const target& dest, const param& prm)const
 
         ssize_t r_ret;
         std::size_t transfer_count = 0ul;
-        while((r_ret = read(*ptr_to_fd_, buff.get(), buff_size)) != 0){
+        while((r_ret = iohelper::read(*ptr_to_fd_, buff.get(), buff_size)) != 0){
             if(r_ret == -1){
                 ERROR("", "read");
             }
@@ -113,7 +113,7 @@ int target::transfer_to(const target& dest, const param& prm)const
                     break;
                 }
             }else{
-                ssize_t w_ret = write(*dest.ptr_to_fd_, buff.get(), r);
+                ssize_t w_ret = iohelper::write(*dest.ptr_to_fd_, buff.get(), r);
                 if(w_ret == -1){
                     ERROR("", "write");
                 }
@@ -123,40 +123,13 @@ int target::transfer_to(const target& dest, const param& prm)const
     return 0;
 }
 
-#define SNPRINTF(fd, buff, size, count, ...) \
-    do{ \
-        const int printf_ret = std::snprintf( \
-                buff + count, \
-                size - count, __VA_ARGS__); \
-        \
-        if(printf_ret < 0){ \
-            ERROR("", "std::snprintf"); \
-        } \
-        if(size - count <= static_cast<std::size_t>(printf_ret)){ \
-            ERROR("", "truncating occurred in std::snprintf"); \
-        } \
-        \
-        count += static_cast<decltype(count)>(printf_ret); \
-        \
-        if(size * 8 / 10 < count){ \
-            /* if buff is filled 80% or more, flush it. */ \
-            ssize_t ret = write(fd, buff, count); \
-            if(ret == -1){ \
-                ERROR("", "write"); \
-            } \
-            count = 0; \
-        } \
-    }while(false)
-
 int target::hexdump(int fd, const char* data, std::size_t offset,
         std::size_t length, std::size_t page_offset, int width)
 {
     const std::size_t bufsize = static_cast<std::size_t>(page_size_) * 20ul;
-    std::shared_ptr<char[]> buff(new char[bufsize]);
-    char* b = buff.get();
-    std::size_t write_count = 0;
 
-    SNPRINTF(fd, b, bufsize, write_count,
+    iohelper ioh(fd, bufsize);
+    ioh.snprintf(
     "Offset           0       %s4        8       %sc         ASCII\n"
     "---------------- --------%s-----------------%s--------  ----------------\n",
     width < 64 ? " ": "", width < 64 ? " ": "",
@@ -173,27 +146,28 @@ int target::hexdump(int fd, const char* data, std::size_t offset,
     for(std::size_t i = page_offset & ~0xful; i < page_offset + length; i += bytewise_width){
 
         if(needs_column_heading_print){
-            SNPRINTF(fd, b, bufsize, write_count, "%016lx", column_heading);
+            ioh.snprintf("%016lx", column_heading);
             column_heading += 0x10;
             needs_column_heading_print = false;
         }
 
         if((i & 0x3) == 0x0){
-            SNPRINTF(fd, b, bufsize, write_count, " ");
+            ioh.snprintf(" ");
         }
 
         if(i < page_offset){
-            SNPRINTF(fd, b, bufsize, write_count, "%*s", 2 * static_cast<int>(bytewise_width), "");
-            std::snprintf(ascii, sizeof(ascii), "%*s>", (i + bytewise_width) & ~(bytewise_width - 1), "");
+            ioh.snprintf("%*s", 2 * static_cast<int>(bytewise_width), "");
+            std::snprintf(ascii, sizeof(ascii), "%*s>",
+                    static_cast<int>((i + bytewise_width) & ~(bytewise_width - 1)), "");
         }else{
-            SNPRINTF(fd, b, bufsize, write_count, "%0*lx", width / 4, fetch(data + i, width));
+            ioh.snprintf("%0*lx", width / 4, fetch(data + i, width));
             for(std::size_t j = 0; j < bytewise_width; ++j){
                 ascii[((i + j) & 0xful) + 1] = std::isprint(data[i + j]) ? data[i + j] : '.';
             }
         }
 
         if(((i + bytewise_width) & 0xful) == 0x0){
-            SNPRINTF(fd, b, bufsize, write_count, " %s<\n", ascii);
+            ioh.snprintf(" %s<\n", ascii);
             std::memset(ascii, '\0', sizeof(ascii));
             ascii[0] = '>';
             needs_column_heading_print = true;
@@ -204,17 +178,10 @@ int target::hexdump(int fd, const char* data, std::size_t offset,
             - (((page_offset + length - 1 + bytewise_width) & ~(bytewise_width - 1)) & 0xful)
             + 1) & 0xful;
     const std::size_t padding_for_sep = ((~(page_offset + length -1)) >> 2 & 0x3);
-    SNPRINTF(fd, b, bufsize, write_count, "%*s", static_cast<int>(2 * padding_for_hex + padding_for_sep), "");
+    ioh.snprintf("%*s", static_cast<int>(2 * padding_for_hex + padding_for_sep), "");
 
     if(ascii[1]){
-        SNPRINTF(fd, b, bufsize, write_count, " %s<\n", ascii);
-    }
-
-    if(0 < write_count){
-        ssize_t ret = write(fd, b, write_count);
-        if(ret == -1){
-            ERROR("", "write");
-        }
+        ioh.snprintf(" %s<\n", ascii);
     }
     return 0;
 }
@@ -247,7 +214,61 @@ std::uint64_t target::fetch(const void* p, int width)
     return ret;
 }
 
-ssize_t target::read(int fd, void* buf, size_t count)
+target::iohelper::iohelper(int fd, std::size_t size)
+:fd_(fd),
+size_(size),
+buf_(new char[size_]),
+count_(){}
+
+target::iohelper::~iohelper()
+{
+    if(0 < count_){
+        ssize_t ret = iohelper::write(fd_, buf_.get(), count_);
+        if(ret == -1){
+            try{
+                ERROR_THROW("", "write");
+            }catch(std::exception& e){
+                // exception throwned in destructor will cause 'terminate'.
+                // to avoid this, catch it here.
+                std::cerr << e.what() << std::endl;
+            }
+        }
+    }
+}
+
+template <typename... Args>
+__attribute__((format(printf, 2, 3)))
+int target::iohelper::snprintf(const char* format, Args... args)
+{
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#pragma GCC diagnostic ignored "-Wformat-security"
+    const int printf_ret = std::snprintf(
+            buf_.get() + count_,
+            size_ - count_, format, args...);
+#pragma GCC diagnostic pop
+
+    if(printf_ret < 0){
+        ERROR("", "std::snprintf");
+    }
+    if(size_ - count_ <= static_cast<std::size_t>(printf_ret)){
+        ERROR("", "truncating occurred in std::snprintf");
+    }
+
+    count_ += static_cast<decltype(count_)>(printf_ret);
+
+    if(size_ * 8 / 10 < count_){
+        /* if buf_ is filled 80% or more, flush it. */
+        ssize_t ret = iohelper::write(fd_, buf_.get(), count_);
+        if(ret == -1){
+            ERROR("", "write");
+        }
+        count_ = 0;
+    }
+    return 0;
+}
+
+ssize_t target::iohelper::read(int fd, void* buf, size_t count)
 {
     ssize_t ret;
     do{
@@ -256,7 +277,7 @@ ssize_t target::read(int fd, void* buf, size_t count)
     return ret;
 }
 
-ssize_t target::write(int fd, const void* buf, size_t count)
+ssize_t target::iohelper::write(int fd, const void* buf, size_t count)
 {
     std::size_t done = 0;
     ssize_t ret;
@@ -272,7 +293,7 @@ ssize_t target::write(int fd, const void* buf, size_t count)
     return ret;
 }
 
-void target::close(int* fd_ptr)
+void target::iohelper::close(int* fd_ptr)
 {
     if(0 <= *fd_ptr){
         int ret;
