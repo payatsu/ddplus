@@ -12,6 +12,7 @@ enum class target_role{
 };
 
 enum class endian{
+    HOST,
     BIG,
     LITTLE,
 };
@@ -38,7 +39,7 @@ private:
 
     static int hexdump(int fd, const char* data, std::size_t offset,
             std::size_t length, std::size_t page_offset, int width);
-    static std::uint64_t fetch(const void* p, int width, endian e);
+    static std::uint64_t fetch(const void* p, int width, endian e = endian::HOST);
 
     const static long page_size_;
 

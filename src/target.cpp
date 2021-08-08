@@ -161,8 +161,10 @@ int target::hexdump(int fd, const char* data, std::size_t offset,
                     static_cast<int>((i + bytewise_width) & ~(bytewise_width - 1)), "");
         }else{
             ioh.snprintf("%0*lx", width / 4, fetch(data + i, width, endian::BIG));
+            const std::uint64_t value_in_stack = fetch(data + i, width);
+            const char* p = reinterpret_cast<const char*>(&value_in_stack);
             for(std::size_t j = 0; j < bytewise_width; ++j){
-                ascii[((i + j) & 0xful) + 1] = std::isprint(data[i + j]) ? data[i + j] : '.';
+                ascii[((i + j) & 0xful) + 1] = std::isprint(p[j]) ? p[j] : '.';
             }
         }
 
@@ -197,26 +199,29 @@ std::uint64_t target::fetch(const void* p, int width, endian e)
         break;
     case 16:
         mask = 0x000000000000ffff;
-        if(e == endian::BIG){
-            ret = htobe16(*reinterpret_cast<const std::uint16_t*>(p)) & mask;
-        }else{
-            ret = htole16(*reinterpret_cast<const std::uint16_t*>(p)) & mask;
+        switch(e){
+        case endian::BIG:    ret = htobe16(*reinterpret_cast<const std::uint16_t*>(p)) & mask; break;
+        case endian::LITTLE: ret = htole16(*reinterpret_cast<const std::uint16_t*>(p)) & mask; break;
+        case endian::HOST:
+        default:             ret =         *reinterpret_cast<const std::uint16_t*>(p)  & mask; break;
         }
         break;
     case 32:
         mask = 0x00000000ffffffff;
-        if(e == endian::BIG){
-            ret = htobe32(*reinterpret_cast<const std::uint32_t*>(p)) & mask;
-        }else{
-            ret = htole32(*reinterpret_cast<const std::uint32_t*>(p)) & mask;
+        switch(e){
+        case endian::BIG:    ret = htobe32(*reinterpret_cast<const std::uint32_t*>(p)) & mask; break;
+        case endian::LITTLE: ret = htole32(*reinterpret_cast<const std::uint32_t*>(p)) & mask; break;
+        case endian::HOST:
+        default:             ret =         *reinterpret_cast<const std::uint32_t*>(p)  & mask; break;
         }
         break;
     case 64:
         mask = 0xffffffffffffffff;
-        if(e == endian::BIG){
-            ret = htobe64(*reinterpret_cast<const std::uint64_t*>(p)) & mask;
-        }else{
-            ret = htole64(*reinterpret_cast<const std::uint64_t*>(p)) & mask;
+        switch(e){
+        case endian::BIG:    ret = htobe64(*reinterpret_cast<const std::uint64_t*>(p)) & mask; break;
+        case endian::LITTLE: ret = htole64(*reinterpret_cast<const std::uint64_t*>(p)) & mask; break;
+        case endian::HOST:
+        default:             ret =         *reinterpret_cast<const std::uint64_t*>(p)  & mask; break;
         }
         break;
     default:
