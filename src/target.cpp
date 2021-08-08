@@ -184,16 +184,16 @@ int target::hexdump(int fd, const char* data, std::size_t offset,
 
         if(i < page_offset){
             SNPRINTF(fd, b, bufsize, write_count, "  ");
-            ascii[(i & 0xf)    ] = ' ';
-            ascii[(i & 0xf) + 1] = '>';
+            ascii[(i & 0xful)    ] = ' ';
+            ascii[(i & 0xful) + 1] = '>';
         }else{
             SNPRINTF(fd, b, bufsize, write_count, "%0*lx", width / 4, fetch(data + i, width));
             for(std::size_t j = 0; j < bytewise_width; ++j){
-                ascii[((i + j) & 0xf) + 1] = std::isprint(data[i + j]) ? data[i + j] : '.';
+                ascii[((i + j) & 0xful) + 1] = std::isprint(data[i + j]) ? data[i + j] : '.';
             }
         }
 
-        if(((i + bytewise_width) & 0xf) == 0x0){
+        if(((i + bytewise_width) & 0xful) == 0x0){
             SNPRINTF(fd, b, bufsize, write_count, " %s<\n", ascii);
             std::memset(ascii, '\0', sizeof(ascii));
             ascii[0] = '>';
@@ -201,9 +201,12 @@ int target::hexdump(int fd, const char* data, std::size_t offset,
         }
     }
 
-    for(std::size_t i = 0;
-            i < 2 * (~(page_offset + length -1) & 0xf)
-            + ((~(page_offset + length -1)) >> 2 & 0x3); ++i){
+    const std::size_t padding_for_hex = (0xful
+            - (((page_offset + length - 1 + bytewise_width) & ~(bytewise_width - 1)) & 0xful)
+            + 1) & 0xful;
+    const std::size_t padding_for_sep = ((~(page_offset + length -1)) >> 2 & 0x3);
+
+    for(std::size_t i = 0; i < 2 * padding_for_hex + padding_for_sep; ++i){
         SNPRINTF(fd, b, bufsize, write_count, " ");
     }
     if(ascii[1]){
