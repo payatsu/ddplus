@@ -204,10 +204,8 @@ int target::hexdump(int fd, const char* data, std::size_t offset,
             - (((page_offset + length - 1 + bytewise_width) & ~(bytewise_width - 1)) & 0xful)
             + 1) & 0xful;
     const std::size_t padding_for_sep = ((~(page_offset + length -1)) >> 2 & 0x3);
+    SNPRINTF(fd, b, bufsize, write_count, "%*s", static_cast<int>(2 * padding_for_hex + padding_for_sep), "");
 
-    for(std::size_t i = 0; i < 2 * padding_for_hex + padding_for_sep; ++i){
-        SNPRINTF(fd, b, bufsize, write_count, " ");
-    }
     if(ascii[1]){
         SNPRINTF(fd, b, bufsize, write_count, " %s<\n", ascii);
     }
