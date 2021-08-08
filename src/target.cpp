@@ -183,9 +183,8 @@ int target::hexdump(int fd, const char* data, std::size_t offset,
         }
 
         if(i < page_offset){
-            SNPRINTF(fd, b, bufsize, write_count, "  ");
-            ascii[(i & 0xful)    ] = ' ';
-            ascii[(i & 0xful) + 1] = '>';
+            SNPRINTF(fd, b, bufsize, write_count, "%*s", 2 * static_cast<int>(bytewise_width), "");
+            std::snprintf(ascii, sizeof(ascii), "%*s>", (i + bytewise_width) & ~(bytewise_width - 1), "");
         }else{
             SNPRINTF(fd, b, bufsize, write_count, "%0*lx", width / 4, fetch(data + i, width));
             for(std::size_t j = 0; j < bytewise_width; ++j){
