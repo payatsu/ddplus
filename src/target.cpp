@@ -160,7 +160,7 @@ int target::hexdump(int fd, const char* data, std::size_t offset,
             std::snprintf(ascii, sizeof(ascii), "%*s>",
                     static_cast<int>((i + bytewise_width) & ~(bytewise_width - 1)), "");
         }else{
-            ioh.snprintf("%0*lx", width / 4, fetch(data + i, width));
+            ioh.snprintf("%0*lx", width / 4, fetch(data + i, width, endian::BIG));
             for(std::size_t j = 0; j < bytewise_width; ++j){
                 ascii[((i + j) & 0xful) + 1] = std::isprint(data[i + j]) ? data[i + j] : '.';
             }
@@ -186,7 +186,7 @@ int target::hexdump(int fd, const char* data, std::size_t offset,
     return 0;
 }
 
-std::uint64_t target::fetch(const void* p, int width)
+std::uint64_t target::fetch(const void* p, int width, endian e)
 {
     std::uint64_t mask = 0;
     std::uint64_t ret = 0;
@@ -197,15 +197,27 @@ std::uint64_t target::fetch(const void* p, int width)
         break;
     case 16:
         mask = 0x000000000000ffff;
-        ret = htobe16(*reinterpret_cast<const std::uint16_t*>(p)) & mask;
+        if(e == endian::BIG){
+            ret = htobe16(*reinterpret_cast<const std::uint16_t*>(p)) & mask;
+        }else{
+            ret = htole16(*reinterpret_cast<const std::uint16_t*>(p)) & mask;
+        }
         break;
     case 32:
         mask = 0x00000000ffffffff;
-        ret = htobe32(*reinterpret_cast<const std::uint32_t*>(p)) & mask;
+        if(e == endian::BIG){
+            ret = htobe32(*reinterpret_cast<const std::uint32_t*>(p)) & mask;
+        }else{
+            ret = htole32(*reinterpret_cast<const std::uint32_t*>(p)) & mask;
+        }
         break;
     case 64:
         mask = 0xffffffffffffffff;
-        ret = htobe64(*reinterpret_cast<const std::uint64_t*>(p)) & mask;
+        if(e == endian::BIG){
+            ret = htobe64(*reinterpret_cast<const std::uint64_t*>(p)) & mask;
+        }else{
+            ret = htole64(*reinterpret_cast<const std::uint64_t*>(p)) & mask;
+        }
         break;
     default:
         ERROR_THROW("", std::string("unsupported bit width: ") + std::to_string(width));

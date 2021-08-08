@@ -11,6 +11,11 @@ enum class target_role{
     DST,
 };
 
+enum class endian{
+    BIG,
+    LITTLE,
+};
+
 class target{
 public:
     target(const std::string& filename, std::size_t offset = 0ul, std::size_t length = 0ul);
@@ -33,7 +38,7 @@ private:
 
     static int hexdump(int fd, const char* data, std::size_t offset,
             std::size_t length, std::size_t page_offset, int width);
-    static std::uint64_t fetch(const void* p, int width);
+    static std::uint64_t fetch(const void* p, int width, endian e);
 
     const static long page_size_;
 
