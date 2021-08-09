@@ -54,6 +54,7 @@ private:
         int snprintf(const char* format, Args... args); // defined in .cpp file.
 
     public:
+        static int open(const char* pathname, int flags, mode_t mode);
         static ssize_t read(int fd, void* buf, size_t count);
         static ssize_t write(int fd, const void* buf, size_t count);
         static void close(int*);

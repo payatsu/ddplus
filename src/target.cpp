@@ -23,7 +23,7 @@ endian to_endian(const std::string& str)
 const long target::page_size_ = sysconf(_SC_PAGESIZE);
 
 target::target(const std::string& filename, std::size_t offset, std::size_t length)
-: ptr_to_fd_(new int(open(filename.c_str(),O_RDWR | O_CREAT,
+: ptr_to_fd_(new int(iohelper::open(filename.c_str(), O_RDWR | O_CREAT,
                 S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)), iohelper::close),
 mmapped_data_(),
 offset_(offset),
@@ -296,6 +296,15 @@ int target::iohelper::snprintf(const char* format, Args... args)
         count_ = 0;
     }
     return 0;
+}
+
+int target::iohelper::open(const char* pathname, int flags, mode_t mode)
+{
+    int ret;
+    do{
+        ret = ::open(pathname, flags, mode);
+    }while(ret == -1 && errno == EINTR);
+    return ret;
 }
 
 ssize_t target::iohelper::read(int fd, void* buf, size_t count)
