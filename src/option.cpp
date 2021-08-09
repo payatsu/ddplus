@@ -102,9 +102,9 @@ std::shared_ptr<target> option_parser::to_target(const std::string& spec, const 
         if(spec == "-"){
             return std::make_shared<target>(role == target_role::SRC ? STDIN_FILENO : STDOUT_FILENO);
         }
-        return std::make_shared<target>(spec);
+        return std::make_shared<target>(spec, role);
     }
-    return std::make_shared<target>("/dev/mem", offset, length);
+    return std::make_shared<target>("/dev/mem", role, offset, length);
 }
 
 void option_parser::parse_transfer(const std::string& str, std::string& src, std::string& dst)const

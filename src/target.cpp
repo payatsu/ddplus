@@ -22,8 +22,9 @@ endian to_endian(const std::string& str)
 
 const long target::page_size_ = sysconf(_SC_PAGESIZE);
 
-target::target(const std::string& filename, std::size_t offset, std::size_t length)
-: ptr_to_fd_(new int(iohelper::open(filename.c_str(), O_RDWR | O_CREAT,
+target::target(const std::string& filename, target_role role,
+        std::size_t offset, std::size_t length)
+: ptr_to_fd_(new int(iohelper::open(filename.c_str(), select_file_flags(role),
                 S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)), iohelper::close),
 mmapped_data_(),
 offset_(offset),
@@ -66,8 +67,13 @@ page_offset_()
         return;
     }
 
-    void* m = mmap(nullptr, page_offset_ + length_,
-            PROT_READ | PROT_WRITE, MAP_SHARED, *ptr_to_fd_,
+    int prot = 0;
+    switch(role){
+    case target_role::SRC: prot = PROT_READ;  break;
+    case target_role::DST: prot = PROT_WRITE; break;
+    default: ERROR_THROW("", ""); break;
+    }
+    void* m = mmap(nullptr, page_offset_ + length_, prot, MAP_SHARED, *ptr_to_fd_,
             static_cast<off_t>(offset_ & ~(
                     static_cast<std::size_t>(page_size_) - 1)));
 
@@ -240,6 +246,17 @@ std::uint64_t target::fetch(const void* p, int width, endian e)
     default:
         ERROR_THROW("", std::string("unsupported bit width: ") + std::to_string(width));
         break;
+    }
+    return ret;
+}
+
+int target::select_file_flags(target_role r)
+{
+    int ret = 0;
+    switch(r){
+    case target_role::SRC: ret = O_RDONLY;         break;
+    case target_role::DST: ret = O_RDWR | O_CREAT; break;
+    default: ERROR_THROW("", ""); break;
     }
     return ret;
 }

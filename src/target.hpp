@@ -21,7 +21,8 @@ endian to_endian(const std::string& str);
 
 class target{
 public:
-    target(const std::string& filename, std::size_t offset = 0ul, std::size_t length = 0ul);
+    target(const std::string& filename, target_role role,
+            std::size_t offset = 0ul, std::size_t length = 0ul);
     target(int fd);
     target(const target&) = default;
     ~target(){}
@@ -42,6 +43,7 @@ private:
     static int hexdump(int fd, const char* data, std::size_t offset,
             std::size_t length, std::size_t page_offset, const param& prm);
     static std::uint64_t fetch(const void* p, int width, endian e = endian::HOST);
+    static int select_file_flags(target_role r);
 
     const static long page_size_;
 

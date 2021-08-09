@@ -102,7 +102,7 @@ TEST(TargetTest, ConstructionTest)
         struct stat buf;
         EXPECT_NE(stat(file, &buf), -1);
 
-        target t(file);
+        target t(file, target_role::SRC);
         EXPECT_EQ(t.length(), static_cast<std::size_t>(buf.st_size));
         EXPECT_EQ(t.offset()[0], '\x7f');
         EXPECT_EQ(t.offset()[1], 'E');
@@ -114,7 +114,7 @@ TEST(TargetTest, ConstructionTest)
     {
         const char* file = "/dev/zero";
 
-        target t1(file, 0, 0x2000);
+        target t1(file, target_role::SRC, 0, 0x2000);
         EXPECT_EQ(t1.length(), 0x2000ul);
         EXPECT_EQ(t1.offset()[0x0000], 0);
         EXPECT_EQ(t1.offset()[0x0001], 0);
@@ -122,7 +122,7 @@ TEST(TargetTest, ConstructionTest)
         EXPECT_EQ(t1.offset()[0x1000], 0);
         EXPECT_EQ(t1.offset()[0x1fff], 0);
 
-        target t2(file, 0x0fff, 0x2000);
+        target t2(file, target_role::DST, 0x0fff, 0x2000);
         EXPECT_EQ(t2.length(), 0x2000ul);
         EXPECT_EQ(t2.offset()[0x0000], 0);
         EXPECT_EQ(t2.offset()[0x0001], 0);
@@ -134,7 +134,7 @@ TEST(TargetTest, ConstructionTest)
     // in case of) directory.
     {
         const char* file = "/";
-        EXPECT_THROW(target t(file), std::runtime_error);
+        EXPECT_THROW(target t(file, target_role::SRC), std::runtime_error);
     }
 
     // in case of) other file. socket, symbolic link, block device, fifo.
@@ -150,24 +150,25 @@ TEST(TargetTest, TransferTest)
     // from: memory mapped file
     // to  : memory mapped file
     {
-        target src("/dev/zero", 0, 8);
+        // TODO: 'src' should have the role 'SRC', not 'DST'.
+        target src("/dev/zero", target_role::DST, 0, 8);
         for(std::size_t i = 0; i < src.length(); ++i){
             src.offset()[i] = '\xff';
         }
 
-        target dst_just("/dev/zero", 0, 8);
+        target dst_just("/dev/zero", target_role::DST, 0, 8);
         EXPECT_EQ(src.transfer_to(dst_just, prm), 0);
         for(std::size_t i = 0; i < dst_just.length(); ++i){
             EXPECT_EQ(dst_just.offset()[i], '\xff');
         }
 
-        target dst_short("/dev/zero", 0, 4);
+        target dst_short("/dev/zero", target_role::DST, 0, 4);
         EXPECT_EQ(src.transfer_to(dst_short, prm), 0);
         for(std::size_t i = 0; i < dst_short.length(); ++i){
             EXPECT_EQ(dst_short.offset()[i], '\xff');
         }
 
-        target dst_wide("/dev/zero", 0, 16);
+        target dst_wide("/dev/zero", target_role::DST, 0, 16);
         EXPECT_EQ(src.transfer_to(dst_wide, prm), 0);
         for(std::size_t i = 0; i < src.length(); ++i){
             EXPECT_EQ(dst_wide.offset()[i], '\xff');
@@ -183,9 +184,9 @@ TEST(TargetTest, TransferTest)
         const char* dst_file = "out.bin";
         unlink(dst_file);
 
-        target src("/dev/zero", 0, 4096);
-        EXPECT_EQ(src.transfer_to(target(dst_file), prm), 0);
-        target dst(dst_file);
+        target src("/dev/zero", target_role::SRC, 0, 4096);
+        EXPECT_EQ(src.transfer_to(target(dst_file, target_role::DST), prm), 0);
+        target dst(dst_file, target_role::DST);
         EXPECT_EQ(dst.length(), src.length());
         EXPECT_EQ(dst.offset()[0], src.offset()[0]);
         EXPECT_EQ(dst.offset()[1], src.offset()[1]);
@@ -205,14 +206,14 @@ TEST(TargetTest, TransferTest)
         ssize_t size = sizeof(buf);
 
         write(fd[1], buf, size);
-        target dst_just("/dev/zero", 0, size);
+        target dst_just("/dev/zero", target_role::DST, 0, size);
         EXPECT_EQ(src.transfer_to(dst_just, prm), 0);
         EXPECT_EQ(dst_just.offset()[       0], 'a');
         EXPECT_EQ(dst_just.offset()[       1], 'b');
         EXPECT_EQ(dst_just.offset()[size - 1], 'h');
 
         write(fd[1], buf, size);
-        target dst_short("/dev/zero", 0, size / 2);
+        target dst_short("/dev/zero", target_role::DST, 0, size / 2);
         EXPECT_EQ(src.transfer_to(dst_short, prm), 0);
         EXPECT_EQ(dst_short.offset()[0], 'a');
         EXPECT_EQ(dst_short.offset()[1], 'b');
@@ -221,7 +222,7 @@ TEST(TargetTest, TransferTest)
 
         write(fd[1], buf, size);
         close(fd[1]);
-        target dst_wide("/dev/zero", 0, size * 2);
+        target dst_wide("/dev/zero", target_role::DST, 0, size * 2);
         EXPECT_EQ(src.transfer_to(dst_wide, prm), 0);
         EXPECT_EQ(dst_wide.offset()[       0], 'a');
         EXPECT_EQ(dst_wide.offset()[       1], 'b');
@@ -244,8 +245,8 @@ TEST(TargetTest, TransferTest)
         const char* dst_file = "out.bin";
         unlink(dst_file);
 
-        EXPECT_EQ(src.transfer_to(target(dst_file), prm), 0);
-        target dst(dst_file);
+        EXPECT_EQ(src.transfer_to(target(dst_file, target_role::DST), prm), 0);
+        target dst(dst_file, target_role::DST);
         EXPECT_EQ(dst.length(), static_cast<std::size_t>(size));
         EXPECT_EQ(dst.offset()[0], 'a');
         EXPECT_EQ(dst.offset()[1], 'b');
