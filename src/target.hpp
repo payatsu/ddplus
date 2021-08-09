@@ -17,6 +17,8 @@ enum class endian{
     LITTLE,
 };
 
+endian to_endian(const std::string& str);
+
 class target{
 public:
     target(const std::string& filename, std::size_t offset = 0ul, std::size_t length = 0ul);
@@ -38,7 +40,7 @@ private:
     std::size_t page_offset_;
 
     static int hexdump(int fd, const char* data, std::size_t offset,
-            std::size_t length, std::size_t page_offset, int width);
+            std::size_t length, std::size_t page_offset, const param& prm);
     static std::uint64_t fetch(const void* p, int width, endian e = endian::HOST);
 
     const static long page_size_;

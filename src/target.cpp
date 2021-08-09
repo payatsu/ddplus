@@ -7,6 +7,19 @@
 #include "common.hpp"
 #include "misc.hpp"
 
+endian to_endian(const std::string& str)
+{
+    if(str == "host"){
+        return endian::HOST;
+    }else if(str == "big"){
+        return endian::BIG;
+    }else if(str == "little"){
+        return endian::LITTLE;
+    }else{
+        ERROR_THROW("", "");
+    }
+}
+
 const long target::page_size_ = sysconf(_SC_PAGESIZE);
 
 target::target(const std::string& filename, std::size_t offset, std::size_t length)
@@ -82,7 +95,7 @@ int target::transfer_to(const target& dest, const param& prm)const
         }else{
             if(prm.hexdump_enabled){
                 if(hexdump(*dest.ptr_to_fd_, mmapped_data_.get(),
-                            offset_, length_, page_offset_, prm.width) != 0){
+                            offset_, length_, page_offset_, prm) != 0){
                     ERROR("", "hexdump");
                 }
             }else{
@@ -124,7 +137,7 @@ int target::transfer_to(const target& dest, const param& prm)const
 }
 
 int target::hexdump(int fd, const char* data, std::size_t offset,
-        std::size_t length, std::size_t page_offset, int width)
+        std::size_t length, std::size_t page_offset, const param& prm)
 {
     const std::size_t bufsize = static_cast<std::size_t>(page_size_) * 20ul;
 
@@ -132,8 +145,8 @@ int target::hexdump(int fd, const char* data, std::size_t offset,
     ioh.snprintf(
     "Offset           0       %s4        8       %sc         ASCII\n"
     "---------------- --------%s-----------------%s--------  ----------------\n",
-    width < 64 ? " ": "", width < 64 ? " ": "",
-    width < 64 ? "-": "", width < 64 ? "-": "");
+    prm.width < 64 ? " ": "", prm.width < 64 ? " ": "",
+    prm.width < 64 ? "-": "", prm.width < 64 ? "-": "");
 
     std::size_t column_heading = offset & ~0xful;
     bool needs_column_heading_print = true;
@@ -142,7 +155,7 @@ int target::hexdump(int fd, const char* data, std::size_t offset,
     // but also for preceeding character '>'.
     char ascii[0x10 + 2] = {'>'};
 
-    const std::size_t bytewise_width = static_cast<std::size_t>(width) / 8;
+    const std::size_t bytewise_width = static_cast<std::size_t>(prm.width) / 8;
     for(std::size_t i = page_offset & ~0xful; i < page_offset + length; i += bytewise_width){
 
         if(needs_column_heading_print){
@@ -160,8 +173,8 @@ int target::hexdump(int fd, const char* data, std::size_t offset,
             std::snprintf(ascii, sizeof(ascii), "%*s>",
                     static_cast<int>((i + bytewise_width) & ~(bytewise_width - 1)), "");
         }else{
-            ioh.snprintf("%0*lx", width / 4, fetch(data + i, width, endian::BIG));
-            const std::uint64_t value_in_stack = fetch(data + i, width);
+            ioh.snprintf("%0*lx", prm.width / 4, fetch(data + i, prm.width, prm.endianness));
+            const std::uint64_t value_in_stack = fetch(data + i, prm.width);
             const char* p = reinterpret_cast<const char*>(&value_in_stack);
             for(std::size_t j = 0; j < bytewise_width; ++j){
                 ascii[((i + j) & 0xful) + 1] = std::isprint(p[j]) ? p[j] : '.';

@@ -32,16 +32,20 @@ std::shared_ptr<param> option_parser::parse_cmdopt()const
             {"verbose",       no_argument, nullptr, 'v'},
             {"hexdump",       no_argument, nullptr, 'd'},
             {"width",   required_argument, nullptr, 'w'},
+            {"endian",  required_argument, nullptr, 'e'},
             {}
         };
 
-        int c = getopt_long(argc_, argv_, "dhvw:", longopts, &option_index);
+        int c = getopt_long(argc_, argv_, "de:hvw:", longopts, &option_index);
         if(c == -1){
             break;
         }
 
         switch(c){
         case 'd': prm->hexdump_enabled = true; break;
+        case 'e':
+            prm->endianness = to_endian(optarg);
+            break;
         case 'h': break;
         case 'v': break;
         case 'w':

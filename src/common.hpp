@@ -14,10 +14,12 @@ struct param{
     param():
         width(32),
         hexdump_enabled(),
+        endianness(),
         transfers(){}
 
     int width;
     bool hexdump_enabled;
+    endian endianness;
     std::vector<transfer> transfers;
 };
 

@@ -3,6 +3,7 @@
 
 class target;
 enum class target_role;
+enum class endian;
 
 struct transfer;
 struct param;
