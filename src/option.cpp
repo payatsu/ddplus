@@ -94,17 +94,17 @@ transfer option_parser::to_transfer(const std::string& spec)const
 
 std::shared_ptr<target> option_parser::to_target(const std::string& spec, const target_role& role)const
 {
+    std::size_t offset;
+    std::size_t length;
     try{
-        std::size_t offset;
-        std::size_t length;
         parse_range(spec, offset, length);
-        return std::make_shared<target>("/dev/mem", offset, length);
     }catch(const std::runtime_error&){
         if(spec == "-"){
             return std::make_shared<target>(role == target_role::SRC ? STDIN_FILENO : STDOUT_FILENO);
         }
         return std::make_shared<target>(spec);
     }
+    return std::make_shared<target>("/dev/mem", offset, length);
 }
 
 void option_parser::parse_transfer(const std::string& str, std::string& src, std::string& dst)const
