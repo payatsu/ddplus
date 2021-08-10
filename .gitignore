@@ -28,7 +28,7 @@ configure
 libtool
 stamp-h1
 tags
-src/ddplus
+src/yadd
 tests/googletest-release-*/
 tests/gtest/
 tests/testsuite

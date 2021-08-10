@@ -1,7 +1,7 @@
-bin_PROGRAMS = ddplus
-ddplus_SOURCES = \
+bin_PROGRAMS = yadd
+yadd_SOURCES = \
 	common.hpp \
-	ddplus.cpp \
+	yadd.cpp \
 	fwd.hpp \
 	misc.hpp \
 	option.hpp \
@@ -9,7 +9,7 @@ ddplus_SOURCES = \
 	target.hpp \
 	target.cpp
 
-ddplus_CXXFLAGS = -std=c++17 $(warning_options)
+yadd_CXXFLAGS = -std=c++17 $(warning_options)
 
 .PHONY: list-warning-options
 list-warning-options:
