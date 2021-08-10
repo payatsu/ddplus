@@ -17,6 +17,50 @@
 #define REGEX_TRANSFER \
     REGEX_TARGET ":" REGEX_TARGET
 
+#ifndef PACKAGE_NAME
+#define "THIS-TOOL"
+#endif
+
+static void show_help(void)
+{
+    std::printf(
+            "Usage: " PACKAGE_NAME " [OPTIONS]... TRANSFERS\n"
+            R"(Transfer data from source to destination.
+
+Options:
+    -h, --help              show this help.
+    -d, --hexdump           output hexadecimal style, instead of raw style.
+    -w NUM, --width NUM     access width. NUM is either of 8/16/32/64.
+    -e TYPE, --endian TYPE  specify endian while hexdump('-d').
+
+Syntax:
+    TRANSFERS       :=  TRANSFER [ " " TRANSFERS ]
+    TRANSFER        :=  SRC ":" DST
+
+    SRC             :=  { LENGTH "@" OFFSET | "-" | path-to-a-existing-file }
+    DST             :=  { LENGTH "@" OFFSET | "-" | path-to-a-output-file }
+                        LENGTH@OFFSET represents a physical memory region
+                        which starts at OFFSET and has length LENGTH.
+                        "-" represents stdin  in SRC context.
+                        "-" represents stdout in DST context.
+                        note that you need a preceding "--", which means
+                        end of options, to avoid confusion when you use
+                        stdin.
+
+    LENGTH, OFFSET  :=  {      decimal-digit's
+                        | "0x" hex-digit's
+                        |  "0" octal-digits } [ SUFFIX ]
+    SUFFIX          :=  { "k" | "K"
+                        | "m" | "M"
+                        | "g" | "G" }
+                        k/K: 1024
+                        m/M: 1024 * 1024
+                        g/G: 1024 * 1024 * 1024
+)"
+            );
+    std::exit(EXIT_SUCCESS);
+}
+
 option_parser::option_parser(int argc, char* argv[])
 : argc_(argc), argv_(argv) {}
 
@@ -46,7 +90,7 @@ std::shared_ptr<param> option_parser::parse_cmdopt()const
         case 'e':
             prm->endianness = to_endian(optarg);
             break;
-        case 'h': break;
+        case 'h': show_help(); break;
         case 'v': break;
         case 'w':
             try{
