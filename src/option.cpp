@@ -30,8 +30,11 @@ static void show_help(void)
 Options:
     -h, --help              show this help.
     -d, --hexdump           output hexadecimal style, instead of raw style.
-    -w NUM, --width NUM     access width. NUM is either of 8/16/32/64.
+    -w NUM, --width NUM     access width. NUM is either of 8, 16, 32, 64.
+                            by default,32 is used.
     -e TYPE, --endian TYPE  specify endian while hexdump('-d').
+                            TYPE is either of host, big, little.
+                            by default, host is used.
 
 Syntax:
     TRANSFERS       :=  TRANSFER [ " " TRANSFERS ]
@@ -39,7 +42,7 @@ Syntax:
 
     SRC             :=  { LENGTH "@" OFFSET | "-" | path-to-a-existing-file }
     DST             :=  { LENGTH "@" OFFSET | "-" | path-to-a-output-file }
-                        LENGTH@OFFSET represents a physical memory region
+                        LENGTH@OFFSET represents a physical address region
                         which starts at OFFSET and has length LENGTH.
                         "-" represents stdin  in SRC context.
                         "-" represents stdout in DST context.
