@@ -18,8 +18,18 @@
     REGEX_TARGET ":" REGEX_TARGET
 
 #ifndef PACKAGE_NAME
-#define "THIS-TOOL"
+#define PACKAGE_NAME "THIS-TOOL"
 #endif
+
+#ifndef PACKAGE_STRING
+#define PACKAGE_STRING PACKAGE_NAME
+#endif
+
+static void show_version(void)
+{
+    std::puts(PACKAGE_STRING);
+    std::exit(EXIT_SUCCESS);
+}
 
 static void show_help(void)
 {
@@ -28,7 +38,8 @@ static void show_help(void)
             R"(Transfer data from source to destination.
 
 Options:
-    -h, --help              show this help.
+    -h, --help              show this help and exit.
+    -V, --version           show version and exit.
     -d, --hexdump           output hexadecimal style, instead of raw style.
     -w NUM, --width NUM     access width. NUM is either of 8, 16, 32, 64.
                             by default,32 is used.
@@ -76,6 +87,7 @@ std::shared_ptr<param> option_parser::parse_cmdopt()const
         int option_index = 0;
         option longopts[] = {
             {"help",          no_argument, nullptr, 'h'},
+            {"version",       no_argument, nullptr, 'V'},
             {"verbose",       no_argument, nullptr, 'v'},
             {"hexdump",       no_argument, nullptr, 'd'},
             {"width",   required_argument, nullptr, 'w'},
@@ -83,16 +95,15 @@ std::shared_ptr<param> option_parser::parse_cmdopt()const
             {}
         };
 
-        int c = getopt_long(argc_, argv_, "de:hvw:", longopts, &option_index);
+        int c = getopt_long(argc_, argv_, "Vde:hvw:", longopts, &option_index);
         if(c == -1){
             break;
         }
 
         switch(c){
+        case 'V': show_version(); break;
         case 'd': prm->hexdump_enabled = true; break;
-        case 'e':
-            prm->endianness = to_endian(optarg);
-            break;
+        case 'e': prm->endianness = to_endian(optarg); break;
         case 'h': show_help(); break;
         case 'v': break;
         case 'w':
