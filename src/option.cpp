@@ -41,8 +41,8 @@ Options:
     -h, --help              show this help and exit.
     -V, --version           show version and exit.
     -d, --hexdump           output hexadecimal style, instead of raw style.
-    -w NUM, --width NUM     access width. NUM is either of 8, 16, 32, 64.
-                            by default,32 is used.
+    -w NUM, --width NUM     access bit width. NUM is either of 8, 16, 32, 64.
+                            by default, 32 is used.
     -e TYPE, --endian TYPE  specify endian while hexdump('-d').
                             TYPE is either of host, big, little.
                             by default, host is used.
@@ -57,13 +57,12 @@ Syntax:
                         which starts at OFFSET and has length LENGTH.
                         "-" represents stdin  in SRC context.
                         "-" represents stdout in DST context.
-                        note that you need a preceding "--", which means
-                        end of options, to avoid confusion when you use
-                        stdin.
+                        note that when you use stdin you need a preceding
+                        "--", which means end of options, to avoid confusion.
 
     LENGTH, OFFSET  :=  {      decimal-digit's
-                        | "0x" hex-digit's
-                        |  "0" octal-digits } [ SUFFIX ]
+                        | "0x"     hex-digit's
+                        |  "0"   octal-digit's } [ SUFFIX ]
     SUFFIX          :=  { "k" | "K"
                         | "m" | "M"
                         | "g" | "G" }
