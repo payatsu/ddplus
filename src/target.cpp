@@ -149,10 +149,10 @@ int target::hexdump(int fd, const char* data, std::size_t offset,
 
     iohelper ioh(fd, bufsize);
     ioh.snprintf(
-    "Offset           0       %s4        8       %sc         ASCII\n"
-    "---------------- --------%s-----------------%s--------  ----------------\n",
-    prm.width < 64 ? " ": "", prm.width < 64 ? " ": "",
-    prm.width < 64 ? "-": "", prm.width < 64 ? "-": "");
+    "Offset%*s ""0       %s4        8       %sc         ASCII\n"
+    "%.*s "     "--------%s-----------------%s--------  ----------------\n",
+    2 * sizeof(std::size_t) - 6, "",             prm.width < 64 ? " ": "", prm.width < 64 ? " ": "",
+    2 * sizeof(std::size_t), "----------------", prm.width < 64 ? "-": "", prm.width < 64 ? "-": "");
 
     std::size_t column_heading = offset & ~0xful;
     bool needs_column_heading_print = true;
@@ -165,7 +165,7 @@ int target::hexdump(int fd, const char* data, std::size_t offset,
     for(std::size_t i = page_offset & ~0xful; i < page_offset + length; i += bytewise_width){
 
         if(needs_column_heading_print){
-            ioh.snprintf("%016lx", column_heading);
+            ioh.snprintf("%0*zx", 2 * sizeof(std::size_t), column_heading);
             column_heading += 0x10;
             needs_column_heading_print = false;
         }
