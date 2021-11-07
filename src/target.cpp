@@ -139,6 +139,18 @@ int target::transfer_to(const target& dest, const param& prm)const
             }
         }
     }
+
+    if(dest.mmapped_data_){
+        if(msync(mmapped_data_.get(), page_offset_ + length_, MS_SYNC) == -1){
+            ERROR("", "msync");
+        }
+    }
+    if(fsync(*dest.ptr_to_fd_) == -1){
+        if(errno != EROFS && errno != EINVAL){
+            ERROR("", "fsync");
+        }
+    }
+
     return 0;
 }
 
