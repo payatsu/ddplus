@@ -269,17 +269,12 @@ count_(){}
 
 target::iohelper::~iohelper()
 {
-    if(0 < count_){
-        ssize_t ret = iohelper::write(fd_, buf_.get(), count_);
-        if(ret == -1){
-            try{
-                ERROR_THROW("", "write");
-            }catch(std::exception& e){
-                // exception throwned in destructor will cause 'terminate'.
-                // to avoid this, catch it here.
-                std::cerr << e.what() << std::endl;
-            }
-        }
+    if(count_ <= 0){
+        return;
+    }
+    ssize_t ret = iohelper::write(fd_, buf_.get(), count_);
+    if(ret == -1){
+        ERROR_BASE("", "write", /* nothing */);
     }
 }
 
