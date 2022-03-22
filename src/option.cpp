@@ -2,6 +2,7 @@
 
 #include <regex>
 #include <getopt.h>
+#include "sched.hpp"
 #include <unistd.h>
 #include "common.hpp"
 #include "misc.hpp"
@@ -46,6 +47,9 @@ Options:
     -e TYPE, --endian TYPE  specify endian while hexdump('-d').
                             TYPE is either of host, big, little.
                             by default, host is used.
+    -s POLICY,              specify thread scheduling policy.
+    --schedule POLICY       POLICY is either of
+                            other, fifo, rr, batch, iso, idle, deadline.
 
 Syntax:
     TRANSFERS       :=  TRANSFER [ " " TRANSFERS ]
@@ -85,16 +89,17 @@ std::shared_ptr<param> option_parser::parse_cmdopt()const
         opterr = 0;
         int option_index = 0;
         option longopts[] = {
-            {"help",          no_argument, nullptr, 'h'},
-            {"version",       no_argument, nullptr, 'V'},
-            {"verbose",       no_argument, nullptr, 'v'},
-            {"hexdump",       no_argument, nullptr, 'd'},
-            {"width",   required_argument, nullptr, 'w'},
-            {"endian",  required_argument, nullptr, 'e'},
+            {"help",           no_argument, nullptr, 'h'},
+            {"version",        no_argument, nullptr, 'V'},
+            {"verbose",        no_argument, nullptr, 'v'},
+            {"hexdump",        no_argument, nullptr, 'd'},
+            {"width",    required_argument, nullptr, 'w'},
+            {"endian",   required_argument, nullptr, 'e'},
+            {"schedule", required_argument, nullptr, 's'},
             {}
         };
 
-        int c = getopt_long(argc_, argv_, "Vde:hvw:", longopts, &option_index);
+        int c = getopt_long(argc_, argv_, "Vde:hvw:s:", longopts, &option_index);
         if(c == -1){
             break;
         }
@@ -122,6 +127,7 @@ std::shared_ptr<param> option_parser::parse_cmdopt()const
                 break;
             }
             break;
+        case 's': prm->scheduling_policy = to_scheduling_policy(optarg); break;
         case '?':
             errno = EINVAL;
             ERROR_THROW(argv_[0], std::string("unknown option: '")

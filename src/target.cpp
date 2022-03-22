@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include "common.hpp"
 #include "misc.hpp"
+#include "sched.hpp"
 
 endian to_endian(const std::string& str)
 {
@@ -16,7 +17,8 @@ endian to_endian(const std::string& str)
     }else if(str == "little"){
         return endian::LITTLE;
     }else{
-        ERROR_THROW("", "");
+        errno = EINVAL;
+        ERROR_THROW("", "invalid endian");
     }
 }
 
@@ -95,6 +97,8 @@ page_offset_()
 
 int target::transfer_to(const target& dest, const param& prm)const
 {
+    set_scheduling_policy(prm.scheduling_policy);
+
     if(mmapped_data_){
         if(dest.mmapped_data_){
             std::memcpy(dest.offset(), offset(), std::min(length_, dest.length_));

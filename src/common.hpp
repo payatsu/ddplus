@@ -15,14 +15,15 @@ struct param{
         width(32),
         hexdump_enabled(),
         endianness(),
+        scheduling_policy(),
         transfers(){}
 
     int width;
     bool hexdump_enabled;
     endian endianness;
+    int scheduling_policy;
     std::vector<transfer> transfers;
 };
-
 
 #endif // COMMON_HPP_
 

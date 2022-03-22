@@ -6,6 +6,8 @@ yadd_SOURCES = \
 	misc.hpp \
 	option.hpp \
 	option.cpp \
+	sched.hpp \
+	sched.cpp \
 	target.hpp \
 	target.cpp
 
