@@ -11,11 +11,18 @@ AC_CONFIG_SRCDIR([src/yadd.cpp])
 AC_CONFIG_HEADERS([config.h])
 
 # Checks for programs.
-AC_PROG_INSTALL
+AC_PROG_AWK
 AC_PROG_GREP
+AC_PROG_INSTALL
+AC_PROG_LN_S
+AC_PROG_MAKE_SET
+AC_PROG_RANLIB
 AC_PROG_SED
 LT_INIT
+AC_PROG_CC
+AC_PROG_CPP
 AC_PROG_CXX
+
 
 # Checks for libraries.
 AC_CHECK_LIB([pthread], [main]) # Google Test requires pthread on POSIX system.
@@ -25,12 +32,18 @@ AC_CHECK_HEADERS([fcntl.h unistd.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_CHECK_HEADER_STDBOOL
+AC_TYPE_MODE_T
 AC_TYPE_OFF_T
 AC_TYPE_SIZE_T
+AC_TYPE_SSIZE_T
+AC_TYPE_UINT8_T
+AC_TYPE_UINT16_T
+AC_TYPE_UINT32_T
+AC_TYPE_UINT64_T
 
 # Checks for library functions.
 AC_FUNC_MMAP
-AC_CHECK_FUNCS([munmap strerror])
+AC_CHECK_FUNCS([memset munmap strerror])
 AC_CHECK_DECLS([htobe16 htobe32 htobe64])
 
 AC_CONFIG_MACRO_DIR([m4])
