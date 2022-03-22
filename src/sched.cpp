@@ -28,7 +28,7 @@ void set_scheduling_policy(int policy)
 {
     const int prio = sched_get_priority_min(policy);
     if(prio == -1){
-        ERROR_THROW("", "sched_get_priority_min");
+        ERROR_THROW("sched_get_priority_min");
     }
 
 #pragma GCC diagnostic push
@@ -39,7 +39,7 @@ void set_scheduling_policy(int policy)
 #pragma GCC diagnostic pop
 
     if(sched_setscheduler(0, policy, &sched_param) == -1){
-        ERROR_THROW("", "sched_setscheduler");
+        ERROR_THROW("sched_setscheduler");
     }
 }
 

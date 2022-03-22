@@ -18,7 +18,7 @@ endian to_endian(const std::string& str)
         return endian::LITTLE;
     }else{
         errno = EINVAL;
-        ERROR_THROW("", "invalid endian");
+        ERROR_THROW("invalid endian");
     }
 }
 
@@ -34,16 +34,16 @@ length_(length),
 page_offset_()
 {
     if(*ptr_to_fd_ == -1){
-        ERROR_THROW("", filename);
+        ERROR_THROW(filename);
     }
 
     if(page_size_ == -1){
-        ERROR_THROW("", "sysconf");
+        ERROR_THROW("sysconf");
     }
 
     struct stat buf;
     if(fstat(*ptr_to_fd_, &buf) == -1){
-        ERROR_THROW("", "fstat");
+        ERROR_THROW("fstat");
     }
 
     switch(buf.st_mode & S_IFMT){
@@ -59,7 +59,7 @@ page_offset_()
         break;
     case S_IFDIR:
     default:
-        ERROR_THROW("", "unsupported st_mode");
+        ERROR_THROW("unsupported st_mode");
         break;
     }
 
@@ -73,14 +73,14 @@ page_offset_()
     switch(role){
     case target_role::SRC: prot = PROT_READ;  break;
     case target_role::DST: prot = PROT_WRITE; break;
-    default: ERROR_THROW("", ""); break;
+    default: ERROR_THROW(""); break;
     }
     void* m = mmap(nullptr, page_offset_ + length_, prot, MAP_SHARED, *ptr_to_fd_,
             static_cast<off_t>(offset_ & ~(
                     static_cast<std::size_t>(page_size_) - 1)));
 
     if(m == MAP_FAILED){
-        ERROR_THROW("", "mmap");
+        ERROR_THROW("mmap");
     }
 
     mmapped_data_.reset(reinterpret_cast<char*>(m),
@@ -106,12 +106,12 @@ int target::transfer_to(const target& dest, const param& prm)const
             if(prm.hexdump_enabled){
                 if(hexdump(*dest.ptr_to_fd_, mmapped_data_.get(),
                             offset_, length_, page_offset_, prm) != 0){
-                    ERROR("", "hexdump");
+                    ERROR("hexdump");
                 }
             }else{
                 ssize_t w_ret = iohelper::write(*dest.ptr_to_fd_, offset(), length_);
                 if(w_ret == -1){
-                    ERROR("", "write");
+                    ERROR("write");
                 }
             }
         }
@@ -123,7 +123,7 @@ int target::transfer_to(const target& dest, const param& prm)const
         std::size_t transfer_count = 0ul;
         while((r_ret = iohelper::read(*ptr_to_fd_, buff.get(), buff_size)) != 0){
             if(r_ret == -1){
-                ERROR("", "read");
+                ERROR("read");
             }
             std::size_t r = static_cast<std::size_t>(r_ret);
             if(dest.mmapped_data_){
@@ -138,7 +138,7 @@ int target::transfer_to(const target& dest, const param& prm)const
             }else{
                 ssize_t w_ret = iohelper::write(*dest.ptr_to_fd_, buff.get(), r);
                 if(w_ret == -1){
-                    ERROR("", "write");
+                    ERROR("write");
                 }
             }
         }
@@ -146,12 +146,12 @@ int target::transfer_to(const target& dest, const param& prm)const
 
     if(dest.mmapped_data_){
         if(msync(mmapped_data_.get(), page_offset_ + length_, MS_SYNC) == -1){
-            ERROR("", "msync");
+            ERROR("msync");
         }
     }
     if(fsync(*dest.ptr_to_fd_) == -1){
         if(errno != EROFS && errno != EINVAL){
-            ERROR("", "fsync");
+            ERROR("fsync");
         }
     }
 
@@ -260,7 +260,7 @@ std::uint64_t target::fetch(const void* p, int width, endian e)
         }
         break;
     default:
-        ERROR_THROW("", std::string("unsupported bit width: ") + std::to_string(width));
+        ERROR_THROW(std::string("unsupported bit width: ") + std::to_string(width));
         break;
     }
     return ret;
@@ -272,7 +272,7 @@ int target::select_file_flags(target_role r)
     switch(r){
     case target_role::SRC: ret = O_RDONLY;         break;
     case target_role::DST: ret = O_RDWR | O_CREAT; break;
-    default: ERROR_THROW("", ""); break;
+    default: ERROR_THROW(""); break;
     }
     return ret;
 }
@@ -290,7 +290,7 @@ target::iohelper::~iohelper()
     }
     ssize_t ret = iohelper::write(fd_, buf_.get(), count_);
     if(ret == -1){
-        ERROR_BASE("", "write", /* nothing */);
+        ERROR_BASE("write", /* do nothing */);
     }
 }
 
@@ -307,10 +307,10 @@ int target::iohelper::snprintf(const char* format, Args... args)
 #pragma GCC diagnostic pop
 
     if(printf_ret < 0){
-        ERROR("", "std::snprintf");
+        ERROR("std::snprintf");
     }
     if(size_ - count_ <= static_cast<std::size_t>(printf_ret)){
-        ERROR("", "truncating occurred in std::snprintf");
+        ERROR("truncating occurred in std::snprintf");
     }
 
     count_ += static_cast<decltype(count_)>(printf_ret);
@@ -319,7 +319,7 @@ int target::iohelper::snprintf(const char* format, Args... args)
         /* if buf_ is filled 80% or more, flush it. */
         ssize_t ret = iohelper::write(fd_, buf_.get(), count_);
         if(ret == -1){
-            ERROR("", "write");
+            ERROR("write");
         }
         count_ = 0;
     }

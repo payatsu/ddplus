@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <iostream>
 
-#define ERROR_BASE(progname, message, finish) \
+#define ERROR_BASE(message, finish) \
     do{ \
         std::cerr << (progname) \
             << ':' << __FILE__ \
@@ -17,11 +17,13 @@
         finish; \
     }while(false)
 
-#define ERROR(progname, message) \
-    ERROR_BASE(progname, message, return errno)
+#define ERROR(message) \
+    ERROR_BASE(message, return errno)
 
-#define ERROR_THROW(progname, message) \
-    ERROR_BASE(progname, message, throw std::runtime_error(std::strerror(errno)))
+#define ERROR_THROW(message) \
+    ERROR_BASE(message, throw std::runtime_error(std::strerror(errno)))
+
+extern const char* progname;
 
 #endif // MISC_HPP_
 

@@ -115,14 +115,14 @@ std::shared_ptr<param> option_parser::parse_cmdopt()const
                 prm->width = static_cast<decltype(prm->width)>(std::stol(optarg));
             }catch(const std::exception& e){
                 errno = EINVAL;
-                ERROR_THROW(argv_[0], std::string("can't convert to number: '")
+                ERROR_THROW(std::string("can't convert to number: '")
                         + optarg + "'");
             }
             switch(prm->width){
             case 8: case 16: case 32: case 64: break;
             default:
                 errno = EINVAL;
-                ERROR_THROW(argv_[0], std::string("invalid value: ")
+                ERROR_THROW(std::string("invalid value: ")
                         + std::to_string(prm->width));
                 break;
             }
@@ -130,7 +130,7 @@ std::shared_ptr<param> option_parser::parse_cmdopt()const
         case 's': prm->scheduling_policy = to_scheduling_policy(optarg); break;
         case '?':
             errno = EINVAL;
-            ERROR_THROW(argv_[0], std::string("unknown option: '")
+            ERROR_THROW(std::string("unknown option: '")
                     + static_cast<char>(optopt) + '\'');
             break;
         default:
@@ -175,7 +175,7 @@ void option_parser::parse_transfer(const std::string& str, std::string& src, std
     std::smatch m;
     if(!std::regex_match(str, m, std::regex(REGEX_TRANSFER))){
         errno = EINVAL;
-        ERROR_THROW(argv_[0], std::string("\"") + str + '"');
+        ERROR_THROW(std::string("\"") + str + '"');
     }
 
     src = m.str(1);

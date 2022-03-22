@@ -7,8 +7,12 @@
 #include "option.hpp"
 #include "target.hpp"
 
+const char* progname = nullptr;
+
 int main(int argc, char* argv[])
 {
+    progname = argv[0];
+
     try{
         std::shared_ptr<param> param = option_parser(argc, argv).parse_cmdopt();
         for(const auto& [src, dst]: param->transfers){
