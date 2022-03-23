@@ -75,7 +75,7 @@ page_offset_()
     case target_role::DST: prot = PROT_WRITE; break;
     default: ERROR_THROW(""); break;
     }
-    void* m = mmap(nullptr, page_offset_ + length_, prot, MAP_SHARED, *ptr_to_fd_,
+    void* m = mmap(nullptr, page_offset_ + length_, prot, MAP_SHARED | MAP_POPULATE, *ptr_to_fd_,
             static_cast<off_t>(offset_ & ~(
                     static_cast<std::size_t>(page_size_) - 1)));
 
