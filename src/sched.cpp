@@ -2,6 +2,13 @@
 #include "misc.hpp"
 #include "sched.hpp"
 
+#ifndef SCHED_ISO
+#define SCHED_ISO 4
+#endif
+#ifndef SCHED_DEADLINE
+#define SCHED_DEADLINE 6
+#endif
+
 int to_scheduling_policy(const std::string& str)
 {
     if(str == "other"){
