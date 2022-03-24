@@ -309,7 +309,7 @@ int target::iohelper::snprintf(const char* format, Args... args)
     if(printf_ret < 0){
         ERROR("std::snprintf");
     }
-    if(size_ - count_ <= static_cast<std::size_t>(printf_ret)){
+    if(static_cast<std::size_t>(size_ - count_) <= static_cast<std::size_t>(printf_ret)){
         ERROR("truncating occurred in std::snprintf");
     }
 
