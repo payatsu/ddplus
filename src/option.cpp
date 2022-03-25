@@ -28,7 +28,11 @@
 
 static void show_version(void)
 {
-    std::puts(PACKAGE_STRING);
+    std::puts(PACKAGE_STRING
+#ifdef GIT_COMMIT_ID
+            " git:" GIT_COMMIT_ID
+#endif
+            );
     std::exit(EXIT_SUCCESS);
 }
 

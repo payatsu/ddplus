@@ -65,4 +65,10 @@ AC_ARG_ENABLE([sanitizer],
 	[AS_VAR_IF([enable_sanitizer], [yes],
 		[sanitizer_flags='-static-libasan -static-liblsan -static-libubsan'])
 	AC_SUBST([sanitizer_flags])])
+
+AS_IF([which git > /dev/null && test -d ${srcdir}/.git], [
+	git_commit_id=`git -C ${srcdir} rev-parse --short HEAD``git -C ${srcdir} status --porcelain | grep -qe '^.@<:@^ @:>@' && echo '*'`
+	AC_DEFINE_UNQUOTED([GIT_COMMIT_ID], ["${git_commit_id}"], [Git commit ID])
+])
+
 AC_OUTPUT
