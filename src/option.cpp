@@ -54,6 +54,8 @@ Options:
     -s POLICY,              specify thread scheduling policy.
     --schedule POLICY       POLICY is either of
                             other, fifo, rr, batch, iso, idle, deadline.
+    -r COUNT,               specify repeat count.
+    --repeat COUNT          COUNT is a integer greater than zero, or endless.
 
 Syntax:
     TRANSFERS       :=  TRANSFER [ " " TRANSFERS ]
@@ -100,10 +102,11 @@ std::shared_ptr<param> option_parser::parse_cmdopt()const
             {"width",    required_argument, nullptr, 'w'},
             {"endian",   required_argument, nullptr, 'e'},
             {"schedule", required_argument, nullptr, 's'},
+            {"repeat",   required_argument, nullptr, 'r'},
             {}
         };
 
-        int c = getopt_long(argc_, argv_, "Vde:hvw:s:", longopts, &option_index);
+        int c = getopt_long(argc_, argv_, "Vde:hr:s:vw:", longopts, &option_index);
         if(c == -1){
             break;
         }
@@ -113,6 +116,8 @@ std::shared_ptr<param> option_parser::parse_cmdopt()const
         case 'd': prm->hexdump_enabled = true; break;
         case 'e': prm->endianness = to_endian(optarg); break;
         case 'h': show_help(); break;
+        case 'r': prm->repeat = to_repeat(optarg); break;
+        case 's': prm->scheduling_policy = to_scheduling_policy(optarg); break;
         case 'v': break;
         case 'w':
             try{
@@ -131,7 +136,6 @@ std::shared_ptr<param> option_parser::parse_cmdopt()const
                 break;
             }
             break;
-        case 's': prm->scheduling_policy = to_scheduling_policy(optarg); break;
         case '?':
             errno = EINVAL;
             ERROR_THROW(std::string("unknown option: '")
@@ -214,6 +218,28 @@ std::size_t option_parser::to_number(char suffix)
     case 'm': case 'M': n <<= 20; break;
     case 'g': case 'G': n <<= 30; break;
     default: break;
+    }
+    return n;
+}
+
+int option_parser::to_repeat(const std::string& spec)
+{
+    if(spec == "endless"){
+        return -1;
+    }
+
+    int n = 0;
+    try{
+        n = std::stoi(spec, nullptr, 0);
+    }catch(const std::exception& e){
+        errno = EINVAL;
+        ERROR_THROW(std::string("can't convert to number: '")
+                + spec + "'");
+    }
+
+    if(n <= 0){
+        errno = EINVAL;
+        ERROR_THROW("repeat number must be greater than zero: '" + spec + "'");
     }
     return n;
 }

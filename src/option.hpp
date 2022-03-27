@@ -24,6 +24,7 @@ public:
 
 private:
     static std::size_t to_number(char suffix);
+    static int to_repeat(const std::string& spec);
 
 private:
     int argc_;

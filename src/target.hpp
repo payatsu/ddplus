@@ -59,6 +59,7 @@ private:
         static int open(const char* pathname, int flags, mode_t mode);
         static ssize_t read(int fd, void* buf, size_t count);
         static ssize_t write(int fd, const void* buf, size_t count);
+        static off_t lseek(int fd, off_t offset, int whence);
         static void close(int*);
 
     private:

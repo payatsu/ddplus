@@ -15,8 +15,10 @@ int main(int argc, char* argv[])
 
     try{
         std::shared_ptr<param> param = option_parser(argc, argv).parse_cmdopt();
-        for(const auto& [src, dst]: param->transfers){
-            src->transfer_to(*dst, *param);
+        for(int i = 0; i < param->repeat || param->repeat < 0; ++i){
+            for(const auto& [src, dst]: param->transfers){
+                src->transfer_to(*dst, *param);
+            }
         }
     }catch(const std::exception&){
         ; // do nothing.

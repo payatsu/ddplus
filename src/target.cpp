@@ -99,6 +99,10 @@ int target::transfer_to(const target& dest, const param& prm)const
 {
     set_scheduling_policy(prm.scheduling_policy);
 
+    if(iohelper::lseek(*ptr_to_fd_, 0, SEEK_SET) == -1){
+        ERROR("lseek");
+    }
+
     if(mmapped_data_){
         if(dest.mmapped_data_){
             std::memcpy(dest.offset(), offset(), std::min(length_, dest.length_));
@@ -357,6 +361,18 @@ ssize_t target::iohelper::write(int fd, const void* buf, size_t count)
         }
         done += static_cast<std::size_t>(ret);
     }while(done < count);
+    return ret;
+}
+
+off_t target::iohelper::lseek(int fd, off_t offset, int whence)
+{
+    off_t ret = ::lseek(fd, offset, whence);
+    if(ret == -1){
+        if(errno != ESPIPE){
+            return ret;
+        }
+        ret = 0;
+    }
     return ret;
 }
 

@@ -16,12 +16,14 @@ struct param{
         hexdump_enabled(),
         endianness(),
         scheduling_policy(),
+        repeat(1),
         transfers(){}
 
     int width;
     bool hexdump_enabled;
     endian endianness;
     int scheduling_policy;
+    int repeat;
     std::vector<transfer> transfers;
 };
 
