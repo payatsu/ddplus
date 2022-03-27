@@ -8,6 +8,8 @@
 #include "option.hpp"
 #include "target.hpp"
 
+const char* progname = nullptr;
+
 int main(int argc, char* argv[])
 {
     ::testing::InitGoogleTest(&argc, argv);

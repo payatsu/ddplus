@@ -4,6 +4,7 @@ check_PROGRAMS = testsuite
 testsuite_SOURCES = \
 	test.cpp \
 	$(top_srcdir)/src/option.cpp \
+	$(top_srcdir)/src/sched.cpp \
 	$(top_srcdir)/src/target.cpp
 
 nodist_testsuite_SOURCES = gtest/gtest.h gtest/gtest-all.cc
