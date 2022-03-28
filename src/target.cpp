@@ -376,6 +376,15 @@ off_t target::iohelper::lseek(int fd, off_t offset, int whence)
     return ret;
 }
 
+int target::iohelper::ftruncate(int fd, off_t length)
+{
+    int ret;
+    do{
+        ret = ::ftruncate(fd, length);
+    }while(ret == -1 && errno == EINTR);
+    return ret;
+}
+
 void target::iohelper::close(int* fd_ptr)
 {
     if(0 <= *fd_ptr){
