@@ -3,7 +3,6 @@
 #include <cstdio>
 #include <fcntl.h>
 #include <sys/mman.h>
-#include <sys/stat.h>
 #include "common.hpp"
 #include "misc.hpp"
 #include "sched.hpp"
@@ -29,9 +28,10 @@ target::target(const std::string& filename, target_role role,
 : ptr_to_fd_(new int(iohelper::open(filename.c_str(), select_file_flags(role),
                 S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)), iohelper::close),
 mmapped_data_(),
+stat_(iohelper::fstat(*ptr_to_fd_)),
 offset_(offset),
-length_(length),
-page_offset_()
+length_(init_length(length, role)),
+page_offset_(offset_ & (static_cast<std::size_t>(page_size_) - 1))
 {
     if(*ptr_to_fd_ == -1){
         ERROR_THROW(filename);
@@ -41,13 +41,11 @@ page_offset_()
         ERROR_THROW("sysconf");
     }
 
-    init_length(role);
+    preprocess(role);
 
     if(length_ == 0){
         return;
     }
-
-    page_offset_ = offset_ & (static_cast<std::size_t>(page_size_) - 1);
 
     int prot = 0;
     switch(role){
@@ -70,6 +68,7 @@ page_offset_()
 target::target(int fd)
 : ptr_to_fd_(new int(fd), [](int*){/* do nothing. */}),
 mmapped_data_(),
+stat_(iohelper::fstat(*ptr_to_fd_)),
 offset_(),
 length_(),
 page_offset_()
@@ -142,22 +141,33 @@ int target::transfer_to(const target& dest, const param& prm)const
     return 0;
 }
 
-void target::init_length(target_role role)
+std::size_t target::init_length(std::size_t length, target_role role)
 {
-    struct stat buf;
-    if(fstat(*ptr_to_fd_, &buf) == -1){
-        ERROR_THROW("fstat");
-    }
-
-    switch(buf.st_mode & S_IFMT){
+    switch(stat_.st_mode & S_IFMT){
     case S_IFREG:
     case S_IFLNK:
-        offset_ = 0u;
         if(role == target_role::SRC){
-            length_ = static_cast<std::size_t>(buf.st_size);
-            break;
+            return static_cast<std::size_t>(stat_.st_size);
         }
-        if(iohelper::ftruncate(*ptr_to_fd_, 0) == -1){
+        return length;
+    case S_IFSOCK:
+    case S_IFBLK:
+    case S_IFCHR:
+    case S_IFIFO:
+        return length;
+    case S_IFDIR:
+    default:
+        ERROR_THROW("unsupported st_mode");
+        break;
+    }
+}
+
+void target::preprocess(target_role role)
+{
+    switch(stat_.st_mode & S_IFMT){
+    case S_IFREG:
+    case S_IFLNK:
+        if(role == target_role::DST && iohelper::ftruncate(*ptr_to_fd_, 0) == -1){
             ERROR_THROW("ftruncate");
         }
         break;
@@ -405,6 +415,15 @@ void target::iohelper::close(int* fd_ptr)
         }while(ret == -1 && errno == EINTR);
     }
     delete fd_ptr;
+}
+
+struct stat target::iohelper::fstat(int fd)
+{
+    struct stat buf;
+    if(::fstat(fd, &buf) == -1){
+        ERROR_THROW("fstat");
+    }
+    return buf;
 }
 
 // vim: expandtab shiftwidth=0 tabstop=4 :

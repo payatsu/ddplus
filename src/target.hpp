@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <unistd.h>
+#include <sys/stat.h>
 #include "fwd.hpp"
 
 enum class target_role{
@@ -36,11 +37,13 @@ public:
 private:
     std::shared_ptr<int> ptr_to_fd_;
     std::shared_ptr<char> mmapped_data_;
-    std::size_t offset_;
-    std::size_t length_;
-    std::size_t page_offset_;
+    const struct stat stat_;
+    const std::size_t offset_;
+    const std::size_t length_;
+    const std::size_t page_offset_;
 
-    void init_length(target_role role);
+    std::size_t init_length(std::size_t length, target_role role);
+    void preprocess(target_role role);
 
     static int hexdump(int fd, const char* data, std::size_t offset,
             std::size_t length, std::size_t page_offset, const param& prm);
@@ -64,6 +67,8 @@ private:
         static off_t lseek(int fd, off_t offset, int whence);
         static int ftruncate(int fd, off_t length);
         static void close(int*);
+
+        static struct stat fstat(int fd);
 
     private:
         const int fd_;
