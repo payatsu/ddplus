@@ -41,33 +41,13 @@ page_offset_()
         ERROR_THROW("sysconf");
     }
 
-    struct stat buf;
-    if(fstat(*ptr_to_fd_, &buf) == -1){
-        ERROR_THROW("fstat");
-    }
-
-    switch(buf.st_mode & S_IFMT){
-    case S_IFREG:
-    case S_IFLNK:
-        offset_ = 0u;
-        length_ = static_cast<std::size_t>(buf.st_size);
-        break;
-    case S_IFSOCK:
-    case S_IFBLK:
-    case S_IFCHR:
-    case S_IFIFO:
-        break;
-    case S_IFDIR:
-    default:
-        ERROR_THROW("unsupported st_mode");
-        break;
-    }
-
-    page_offset_ = offset_ & (static_cast<std::size_t>(page_size_) - 1);
+    init_length(role);
 
     if(length_ == 0){
         return;
     }
+
+    page_offset_ = offset_ & (static_cast<std::size_t>(page_size_) - 1);
 
     int prot = 0;
     switch(role){
@@ -160,6 +140,37 @@ int target::transfer_to(const target& dest, const param& prm)const
     }
 
     return 0;
+}
+
+void target::init_length(target_role role)
+{
+    struct stat buf;
+    if(fstat(*ptr_to_fd_, &buf) == -1){
+        ERROR_THROW("fstat");
+    }
+
+    switch(buf.st_mode & S_IFMT){
+    case S_IFREG:
+    case S_IFLNK:
+        offset_ = 0u;
+        if(role == target_role::SRC){
+            length_ = static_cast<std::size_t>(buf.st_size);
+            break;
+        }
+        if(iohelper::ftruncate(*ptr_to_fd_, 0) == -1){
+            ERROR_THROW("ftruncate");
+        }
+        break;
+    case S_IFSOCK:
+    case S_IFBLK:
+    case S_IFCHR:
+    case S_IFIFO:
+        break;
+    case S_IFDIR:
+    default:
+        ERROR_THROW("unsupported st_mode");
+        break;
+    }
 }
 
 int target::hexdump(int fd, const char* data, std::size_t offset,

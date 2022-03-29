@@ -187,12 +187,12 @@ TEST(TargetTest, TransferTest)
         unlink(dst_file);
 
         target src("/dev/zero", target_role::SRC, 0, 4096);
-        EXPECT_EQ(src.transfer_to(target(dst_file, target_role::DST), prm), 0);
         target dst(dst_file, target_role::DST);
-        EXPECT_EQ(dst.length(), src.length());
-        EXPECT_EQ(dst.offset()[0], src.offset()[0]);
-        EXPECT_EQ(dst.offset()[1], src.offset()[1]);
-        EXPECT_EQ(dst.offset()[dst.length() - 1], src.offset()[src.length() - 1]);
+        EXPECT_EQ(src.transfer_to(dst, prm), 0);
+
+        target chk(dst_file, target_role::SRC);
+        EXPECT_EQ(chk.offset()[0], src.offset()[0]);
+        EXPECT_EQ(chk.offset()[1], src.offset()[1]);
 
         unlink(dst_file);
     }
@@ -247,12 +247,14 @@ TEST(TargetTest, TransferTest)
         const char* dst_file = "out.bin";
         unlink(dst_file);
 
-        EXPECT_EQ(src.transfer_to(target(dst_file, target_role::DST), prm), 0);
         target dst(dst_file, target_role::DST);
-        EXPECT_EQ(dst.length(), static_cast<std::size_t>(size));
-        EXPECT_EQ(dst.offset()[0], 'a');
-        EXPECT_EQ(dst.offset()[1], 'b');
-        EXPECT_EQ(dst.offset()[7], 'h');
+        EXPECT_EQ(src.transfer_to(dst, prm), 0);
+
+        target chk(dst_file, target_role::SRC);
+        EXPECT_EQ(chk.length(), static_cast<std::size_t>(size));
+        EXPECT_EQ(chk.offset()[0], 'a');
+        EXPECT_EQ(chk.offset()[1], 'b');
+        EXPECT_EQ(chk.offset()[7], 'h');
 
         unlink(dst_file);
     }

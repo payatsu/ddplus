@@ -40,6 +40,8 @@ private:
     std::size_t length_;
     std::size_t page_offset_;
 
+    void init_length(target_role role);
+
     static int hexdump(int fd, const char* data, std::size_t offset,
             std::size_t length, std::size_t page_offset, const param& prm);
     static std::uint64_t fetch(const void* p, int width, endian e = endian::HOST);
