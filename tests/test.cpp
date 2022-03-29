@@ -1,4 +1,5 @@
 #include <unistd.h>
+#include <cstring>
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -145,47 +146,74 @@ TEST(TargetTest, ConstructionTest)
     }
 }
 
-TEST(TargetTest, TransferTest)
-{
-    param prm;
+class TransferTest: public ::testing::Test{
+protected:
+    TransferTest():
+    src_big_mem("/dev/zero", target_role::DST, 0, 512 << 20),
+    pipefd()
+    {
+        unlink(src_file);
+        unlink(dst_file);
 
-    // from: memory mapped file
-    // to  : memory mapped file
+        for(std::size_t i = 0; i < src_big_mem.length() / sizeof(std::size_t); ++i){
+            reinterpret_cast<std::size_t*>(src_big_mem.offset())[i] = i;
+        }
+
+        EXPECT_EQ(pipe(pipefd), 0);
+        char buf[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
+        ssize_t size = sizeof(buf);
+
+        write(pipefd[1], buf, size);
+    }
+    ~TransferTest()
+    {
+        unlink(src_file);
+        unlink(dst_file);
+
+        close(pipefd[0]);
+        close(pipefd[1]);
+    }
+    param prm;
+    const char* src_file = "in.bin";
+    const char* dst_file = "out.bin";
+
+    // TODO: 'src' should have the role 'SRC', not 'DST'.
+    target src_big_mem;
+
+    int pipefd[2];
+};
+
+TEST_F(TransferTest, FromMmappedToMmappedTest)
+{
+    // basic test.
     {
         // TODO: 'src' should have the role 'SRC', not 'DST'.
         target src("/dev/zero", target_role::DST, 0, 8);
-        for(std::size_t i = 0; i < src.length(); ++i){
-            src.offset()[i] = '\xff';
-        }
+        std::memset(src.offset(), '\xff', src.length());
 
-        target dst_just("/dev/zero", target_role::DST, 0, 8);
-        EXPECT_EQ(src.transfer_to(dst_just, prm), 0);
-        for(std::size_t i = 0; i < dst_just.length(); ++i){
-            EXPECT_EQ(dst_just.offset()[i], '\xff');
-        }
-
-        target dst_short("/dev/zero", target_role::DST, 0, 4);
-        EXPECT_EQ(src.transfer_to(dst_short, prm), 0);
-        for(std::size_t i = 0; i < dst_short.length(); ++i){
-            EXPECT_EQ(dst_short.offset()[i], '\xff');
-        }
-
-        target dst_wide("/dev/zero", target_role::DST, 0, 16);
-        EXPECT_EQ(src.transfer_to(dst_wide, prm), 0);
-        for(std::size_t i = 0; i < src.length(); ++i){
-            EXPECT_EQ(dst_wide.offset()[i], '\xff');
-        }
-        for(std::size_t i = src.length(); i < dst_wide.length(); ++i){
-            EXPECT_EQ(dst_wide.offset()[i], 0);
+        for(int j: {8, 4, 16}){
+            target dst("/dev/zero", target_role::DST, 0, j);
+            EXPECT_EQ(src.transfer_to(dst, prm), 0);
+            const std::size_t min = std::min(src.length(), dst.length());
+            for(std::size_t i = 0; i < min; ++i){
+                EXPECT_EQ(dst.offset()[i], src.offset()[i]);
+            }
+            for(std::size_t i = min; i < dst.length(); ++i){
+                EXPECT_EQ(dst.offset()[i], 0);
+            }
         }
     }
 
-    // from:     memory mapped file
-    // to  : non memory mapped file
     {
-        const char* dst_file = "out.bin";
-        unlink(dst_file);
+        target dst("/dev/zero", target_role::DST, 0, src_big_mem.length());
+        EXPECT_EQ(src_big_mem.transfer_to(dst, prm), 0);
+        EXPECT_EQ(std::memcmp(dst.offset(), src_big_mem.offset(), dst.length()), 0);
+    }
+}
 
+TEST_F(TransferTest, FromMmappedToRegularTest)
+{
+    {
         target src("/dev/zero", target_role::SRC, 0, 4096);
         target dst(dst_file, target_role::DST);
         EXPECT_EQ(src.transfer_to(dst, prm), 0);
@@ -193,71 +221,64 @@ TEST(TargetTest, TransferTest)
         target chk(dst_file, target_role::SRC);
         EXPECT_EQ(chk.offset()[0], src.offset()[0]);
         EXPECT_EQ(chk.offset()[1], src.offset()[1]);
-
-        unlink(dst_file);
     }
 
-    // from: non memory mapped file
-    // to  :     memory mapped file
     {
-        int fd[2];
-        EXPECT_EQ(pipe(fd), 0);
-        target src(fd[0]);
-
-        char buf[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
-        ssize_t size = sizeof(buf);
-
-        write(fd[1], buf, size);
-        target dst_just("/dev/zero", target_role::DST, 0, size);
-        EXPECT_EQ(src.transfer_to(dst_just, prm), 0);
-        EXPECT_EQ(dst_just.offset()[       0], 'a');
-        EXPECT_EQ(dst_just.offset()[       1], 'b');
-        EXPECT_EQ(dst_just.offset()[size - 1], 'h');
-
-        write(fd[1], buf, size);
-        target dst_short("/dev/zero", target_role::DST, 0, size / 2);
-        EXPECT_EQ(src.transfer_to(dst_short, prm), 0);
-        EXPECT_EQ(dst_short.offset()[0], 'a');
-        EXPECT_EQ(dst_short.offset()[1], 'b');
-        EXPECT_EQ(dst_short.offset()[3], 'd');
-        EXPECT_EQ(dst_short.offset()[4],   0); // check for 'of by one' error.
-
-        write(fd[1], buf, size);
-        close(fd[1]);
-        target dst_wide("/dev/zero", target_role::DST, 0, size * 2);
-        EXPECT_EQ(src.transfer_to(dst_wide, prm), 0);
-        EXPECT_EQ(dst_wide.offset()[       0], 'a');
-        EXPECT_EQ(dst_wide.offset()[       1], 'b');
-        EXPECT_EQ(dst_wide.offset()[size - 1], 'h');
-        EXPECT_EQ(dst_wide.offset()[size    ],   0);
-    }
-
-    // from: non memory mapped file
-    // to  : non memory mapped file
-    {
-        int fd[2];
-        EXPECT_EQ(pipe(fd), 0);
-        target src(fd[0]);
-
-        char buf[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
-        ssize_t size = sizeof(buf);
-        write(fd[1], buf, size);
-        close(fd[1]);
-
-        const char* dst_file = "out.bin";
-        unlink(dst_file);
-
         target dst(dst_file, target_role::DST);
-        EXPECT_EQ(src.transfer_to(dst, prm), 0);
-
-        target chk(dst_file, target_role::SRC);
-        EXPECT_EQ(chk.length(), static_cast<std::size_t>(size));
-        EXPECT_EQ(chk.offset()[0], 'a');
-        EXPECT_EQ(chk.offset()[1], 'b');
-        EXPECT_EQ(chk.offset()[7], 'h');
-
-        unlink(dst_file);
+        EXPECT_EQ(src_big_mem.transfer_to(dst, prm), 0);
+        EXPECT_EQ(std::memcmp(dst.offset(), src_big_mem.offset(), dst.length()), 0);
     }
+}
+
+TEST_F(TransferTest, FromPipeToMmappedShortTest)
+{
+    target src(pipefd[0]);
+    target dst("/dev/zero", target_role::DST, 0, 4);
+    EXPECT_EQ(src.transfer_to(dst, prm), 0);
+    EXPECT_EQ(dst.offset()[0], 'a');
+    EXPECT_EQ(dst.offset()[1], 'b');
+    EXPECT_EQ(dst.offset()[3], 'd');
+    EXPECT_EQ(dst.offset()[4],   0); // check for 'of by one' error.
+}
+
+TEST_F(TransferTest, FromPipeToMmappedJustTest)
+{
+    target src(pipefd[0]);
+    target dst("/dev/zero", target_role::DST, 0, 8);
+    EXPECT_EQ(src.transfer_to(dst, prm), 0);
+    EXPECT_EQ(dst.offset()[0], 'a');
+    EXPECT_EQ(dst.offset()[1], 'b');
+    EXPECT_EQ(dst.offset()[7], 'h');
+}
+
+TEST_F(TransferTest, FromPipeToMmappedLongTest)
+{
+    target src(pipefd[0]);
+
+    close(pipefd[1]); // close explicitly to cause pipe end.
+
+    target dst("/dev/zero", target_role::DST, 0, 16);
+    EXPECT_EQ(src.transfer_to(dst, prm), 0);
+    EXPECT_EQ(dst.offset()[0], 'a');
+    EXPECT_EQ(dst.offset()[1], 'b');
+    EXPECT_EQ(dst.offset()[7], 'h');
+    EXPECT_EQ(dst.offset()[8],   0);
+}
+
+TEST_F(TransferTest, FromPipeToRegularTest)
+{
+    target src(pipefd[0]);
+
+    close(pipefd[1]); // close explicitly to cause pipe end.
+
+    target dst(dst_file, target_role::DST);
+    EXPECT_EQ(src.transfer_to(dst, prm), 0);
+
+    target chk(dst_file, target_role::SRC);
+    EXPECT_EQ(chk.length(), 8);
+    EXPECT_EQ(chk.offset()[0], 'a');
+    EXPECT_EQ(chk.offset()[1], 'b');
+    EXPECT_EQ(chk.offset()[7], 'h');
 }
 
 // vim: expandtab shiftwidth=0 tabstop=4 :
