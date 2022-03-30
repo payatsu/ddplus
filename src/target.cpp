@@ -76,6 +76,7 @@ page_offset_()
 
 int target::transfer_to(const target& dest, const param& prm)const
 {
+    stopwatch sw(prm.verbose, std::string(__func__) + ": ");
     set_scheduling_policy(prm.scheduling_policy);
 
     if(iohelper::lseek(*ptr_to_fd_, 0, SEEK_SET) == -1){

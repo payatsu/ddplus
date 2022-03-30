@@ -5,6 +5,7 @@
 #include <chrono>
 #include <cstring>
 #include <stdexcept>
+#include <iomanip>
 #include <iostream>
 
 #define ERROR_BASE(message, finish) \
@@ -30,21 +31,29 @@ class stopwatch{
     using time_point = std::chrono::high_resolution_clock::time_point;
 
 public:
-    stopwatch(const std::string& description = ""): description_(description), start_(now()){}
+    stopwatch(bool enabled = true, const std::string& description = ""):
+    enabled_(enabled), description_(description), start_(now()){}
     ~stopwatch()
     {
+        if(!enabled_){
+            return;
+        }
+
         using std::chrono::duration_cast;
-        using std::chrono::milliseconds;
+        using std::chrono::microseconds;
 
         time_point end = now();
-        milliseconds elapsed_time = duration_cast<milliseconds>(end - start_);
-        std::cerr << description_ << elapsed_time.count() << " ms" << std::endl;
+        microseconds elapsed_time = duration_cast<microseconds>(end - start_);
+        std::cerr << description_ << std::setprecision(2) << std::fixed
+            << static_cast<double>(elapsed_time.count()) / 1000.0
+            << std::resetiosflags(std::ios::fixed) << " ms" << std::endl;
     }
 
 private:
     static time_point now(){return std::chrono::high_resolution_clock::now();}
 
 private:
+    bool enabled_;
     const std::string description_;
     const time_point start_;
 };

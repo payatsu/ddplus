@@ -45,6 +45,7 @@ static void show_help(void)
 Options:
     -h, --help              show this help and exit.
     -V, --version           show version and exit.
+    -v, --verbose           turn on verbose output.
     -d, --hexdump           output hexadecimal style, instead of raw style.
     -w NUM, --width NUM     access bit width. NUM is either of 8, 16, 32, 64.
                             by default, 32 is used.
@@ -118,7 +119,7 @@ std::shared_ptr<param> option_parser::parse_cmdopt()const
         case 'h': show_help(); break;
         case 'r': prm->repeat = to_repeat(optarg); break;
         case 's': prm->scheduling_policy = to_scheduling_policy(optarg); break;
-        case 'v': break;
+        case 'v': prm->verbose = true; break;
         case 'w':
             try{
                 prm->width = static_cast<decltype(prm->width)>(std::stol(optarg));

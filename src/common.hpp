@@ -12,6 +12,7 @@ struct transfer{
 
 struct param{
     param():
+        verbose(),
         width(32),
         hexdump_enabled(),
         endianness(),
@@ -19,6 +20,7 @@ struct param{
         repeat(1),
         transfers(){}
 
+    bool verbose;
     int width;
     bool hexdump_enabled;
     endian endianness;
