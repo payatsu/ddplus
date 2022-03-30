@@ -1,6 +1,7 @@
 #include "target.hpp"
 #include <cctype>
 #include <cstdio>
+#include <thread>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include "common.hpp"
@@ -85,7 +86,8 @@ int target::transfer_to(const target& dest, const param& prm)const
 
     if(mmapped_data_){
         if(dest.mmapped_data_){
-            std::memcpy(dest.offset(), offset(), std::min(length_, dest.length_));
+            iohelper::memcpy(dest.offset(), offset(), std::min(length_, dest.length_),
+                    prm.scheduling_policy, static_cast<std::size_t>(prm.jobs));
         }else{
             if(prm.hexdump_enabled){
                 if(hexdump(*dest.ptr_to_fd_, mmapped_data_.get(),
@@ -425,6 +427,30 @@ struct stat target::iohelper::fstat(int fd)
         ERROR_THROW("fstat");
     }
     return buf;
+}
+
+void *target::iohelper::memcpy(void *dest, const void *src, size_t n, int sched_policy, size_t jobs)
+{
+    std::vector<std::thread> threads;
+    const std::size_t len = n / jobs;
+
+    char* d = reinterpret_cast<char*>(dest);
+    const char* s = reinterpret_cast<const char*>(src);
+
+    for(unsigned int i = 0; i < jobs; ++i){
+        threads.emplace_back(std::thread([sched_policy](void* dp, const void* sp, std::size_t l){
+            set_scheduling_policy(sched_policy);
+            std::memcpy(dp, sp, l);
+        }, d + i * len, s + i * len, len));
+    }
+    for(unsigned int i = 0; i < jobs; ++i){
+        threads.at(i).join();
+    }
+    const std::size_t round = len * jobs;
+    const std::size_t residue = n % jobs;
+    std::memcpy(d + round, s + round, residue);
+
+    return dest;
 }
 
 // vim: expandtab shiftwidth=0 tabstop=4 :

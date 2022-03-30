@@ -185,6 +185,9 @@ protected:
 
 TEST_F(TransferTest, FromMmappedToMmappedTest)
 {
+    prm.verbose = true;
+    prm.jobs = 4;
+
     // basic test.
     {
         // TODO: 'src' should have the role 'SRC', not 'DST'.
@@ -195,9 +198,7 @@ TEST_F(TransferTest, FromMmappedToMmappedTest)
             target dst("/dev/zero", target_role::DST, 0, j);
             EXPECT_EQ(src.transfer_to(dst, prm), 0);
             const std::size_t min = std::min(src.length(), dst.length());
-            for(std::size_t i = 0; i < min; ++i){
-                EXPECT_EQ(dst.offset()[i], src.offset()[i]);
-            }
+            EXPECT_EQ(std::memcmp(dst.offset(), src.offset(), min), 0);
             for(std::size_t i = min; i < dst.length(); ++i){
                 EXPECT_EQ(dst.offset()[i], 0);
             }
@@ -205,9 +206,12 @@ TEST_F(TransferTest, FromMmappedToMmappedTest)
     }
 
     {
-        target dst("/dev/zero", target_role::DST, 0, src_big_mem.length());
-        EXPECT_EQ(src_big_mem.transfer_to(dst, prm), 0);
-        EXPECT_EQ(std::memcmp(dst.offset(), src_big_mem.offset(), dst.length()), 0);
+        for(int i: {0, 1, 2, 3}){
+            target dst("/dev/zero", target_role::DST, 0, src_big_mem.length() - i);
+            EXPECT_EQ(src_big_mem.transfer_to(dst, prm), 0);
+            EXPECT_EQ(std::memcmp(dst.offset(), src_big_mem.offset(),
+                         std::min(dst.length(), src_big_mem.length())), 0);
+        }
     }
 }
 

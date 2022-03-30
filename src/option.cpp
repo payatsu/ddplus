@@ -55,6 +55,7 @@ Options:
     -s POLICY,              specify thread scheduling policy.
     --schedule POLICY       POLICY is either of
                             other, fifo, rr, batch, iso, idle, deadline.
+    -j N, --jobs N          allow N threads at once.
     -r COUNT,               specify repeat count.
     --repeat COUNT          COUNT is a integer greater than zero, or endless.
 
@@ -103,11 +104,12 @@ std::shared_ptr<param> option_parser::parse_cmdopt()const
             {"width",    required_argument, nullptr, 'w'},
             {"endian",   required_argument, nullptr, 'e'},
             {"schedule", required_argument, nullptr, 's'},
+            {"jobs",     required_argument, nullptr, 'j'},
             {"repeat",   required_argument, nullptr, 'r'},
             {}
         };
 
-        int c = getopt_long(argc_, argv_, "Vde:hr:s:vw:", longopts, &option_index);
+        int c = getopt_long(argc_, argv_, "Vde:hj:r:s:vw:", longopts, &option_index);
         if(c == -1){
             break;
         }
@@ -117,6 +119,20 @@ std::shared_ptr<param> option_parser::parse_cmdopt()const
         case 'd': prm->hexdump_enabled = true; break;
         case 'e': prm->endianness = to_endian(optarg); break;
         case 'h': show_help(); break;
+        case 'j':
+            try{
+                prm->jobs = std::stoi(optarg, nullptr, 0);
+            }catch(const std::exception& e){
+                errno = EINVAL;
+                ERROR_THROW(std::string("can't convert to number: '")
+                        + optarg + "'");
+            }
+            if(prm->jobs < 1){
+                errno = EINVAL;
+                ERROR_THROW(std::string("invalid value: ")
+                        + std::to_string(prm->jobs));
+            }
+            break;
         case 'r': prm->repeat = to_repeat(optarg); break;
         case 's': prm->scheduling_policy = to_scheduling_policy(optarg); break;
         case 'v': prm->verbose = true; break;

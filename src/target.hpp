@@ -70,6 +70,9 @@ private:
 
         static struct stat fstat(int fd);
 
+        static void *memcpy(void* dest, const void* src, size_t n,
+                int sched_policy = 1, size_t jobs = 1);
+
     private:
         const int fd_;
         const std::size_t size_;

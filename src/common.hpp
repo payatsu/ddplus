@@ -17,6 +17,7 @@ struct param{
         hexdump_enabled(),
         endianness(),
         scheduling_policy(),
+        jobs(1),
         repeat(1),
         transfers(){}
 
@@ -25,6 +26,7 @@ struct param{
     bool hexdump_enabled;
     endian endianness;
     int scheduling_policy;
+    int jobs;
     int repeat;
     std::vector<transfer> transfers;
 };
