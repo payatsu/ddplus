@@ -39,7 +39,7 @@ private:
     std::shared_ptr<char> mmapped_data_;
     const struct stat stat_;
     const std::size_t offset_;
-    const std::size_t length_;
+    mutable std::size_t length_;
     const std::size_t page_offset_;
 
     std::size_t init_length(std::size_t length, target_role role);
@@ -64,6 +64,7 @@ private:
         static int open(const char* pathname, int flags, mode_t mode);
         static ssize_t read(int fd, void* buf, size_t count);
         static ssize_t write(int fd, const void* buf, size_t count);
+        static ssize_t pwrite(int fd, const void* buf, size_t count, off_t offset);
         static off_t lseek(int fd, off_t offset, int whence);
         static int ftruncate(int fd, off_t length);
         static void close(int*);
@@ -71,7 +72,9 @@ private:
         static struct stat fstat(int fd);
 
         static void *memcpy(void* dest, const void* src, size_t n,
-                int sched_policy = 1, size_t jobs = 1);
+                int sched_policy, size_t jobs);
+        static ssize_t pwrite(int fd, const void* buf, size_t count, off_t offset,
+                int sched_policy, size_t jobs);
 
     private:
         const int fd_;

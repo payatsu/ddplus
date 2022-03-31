@@ -84,21 +84,34 @@ int target::transfer_to(const target& dest, const param& prm)const
         ERROR("lseek");
     }
 
+    const std::size_t jobs = static_cast<std::size_t>(prm.jobs);
+
     if(mmapped_data_){
         if(dest.mmapped_data_){
             iohelper::memcpy(dest.offset(), offset(), std::min(length_, dest.length_),
-                    prm.scheduling_policy, static_cast<std::size_t>(prm.jobs));
+                    prm.scheduling_policy, jobs);
+        }else if(prm.hexdump_enabled){
+            if(hexdump(*dest.ptr_to_fd_, mmapped_data_.get(),
+                        offset_, length_, page_offset_, prm) != 0){
+                ERROR("hexdump");
+            }
         }else{
-            if(prm.hexdump_enabled){
-                if(hexdump(*dest.ptr_to_fd_, mmapped_data_.get(),
-                            offset_, length_, page_offset_, prm) != 0){
-                    ERROR("hexdump");
+            switch(dest.stat_.st_mode & S_IFMT){
+            case S_IFREG: case S_IFLNK:
+                if(iohelper::pwrite(*dest.ptr_to_fd_, offset(), length_,
+                            static_cast<off_t>(dest.length_), prm.scheduling_policy, jobs) == -1){
+                    ERROR("pwrite");
                 }
-            }else{
-                ssize_t w_ret = iohelper::write(*dest.ptr_to_fd_, offset(), length_);
-                if(w_ret == -1){
+                dest.length_ += length_;
+                break;
+            case S_IFSOCK: case S_IFIFO: case S_IFCHR:
+                if(iohelper::write(*dest.ptr_to_fd_, offset(), length_) == -1){
                     ERROR("write");
                 }
+                break;
+            default:
+                ERROR_THROW("unsupported st_mode");
+                break;
             }
         }
     }else{
@@ -388,6 +401,23 @@ ssize_t target::iohelper::write(int fd, const void* buf, size_t count)
     return ret;
 }
 
+ssize_t target::iohelper::pwrite(int fd, const void* buf, size_t count, off_t offset)
+{
+    std::size_t done = 0;
+    ssize_t ret;
+    do{
+        do{
+            ret = ::pwrite(fd, reinterpret_cast<const char*>(buf) + done,
+                    count - done, offset + static_cast<off_t>(done));
+        }while(ret == -1 && errno == EINTR);
+        if(ret == -1){
+            return ret;
+        }
+        done += static_cast<std::size_t>(ret);
+    }while(done < count);
+    return ret;
+}
+
 off_t target::iohelper::lseek(int fd, off_t offset, int whence)
 {
     off_t ret = ::lseek(fd, offset, whence);
@@ -451,6 +481,33 @@ void *target::iohelper::memcpy(void *dest, const void *src, size_t n, int sched_
     std::memcpy(d + round, s + round, residue);
 
     return dest;
+}
+
+ssize_t target::iohelper::pwrite(int fd, const void* buf, size_t count, off_t offset, int sched_policy, size_t jobs)
+{
+    std::vector<std::thread> threads;
+    const std::size_t len = count / jobs;
+
+    const char* b = reinterpret_cast<const char*>(buf);
+
+    for(unsigned int i = 0; i < jobs; ++i){
+        threads.emplace_back(std::thread([fd, sched_policy](const void* bp, size_t cnt, off_t os){
+            set_scheduling_policy(sched_policy);
+            if(iohelper::pwrite(fd, bp, cnt, os) == -1){
+                ERROR_THROW("pwrite");
+            }
+        }, b + i * len, len, offset + static_cast<off_t>(i * len)));
+    }
+    for(unsigned int i = 0; i < jobs; ++i){
+        threads.at(i).join();
+    }
+    const std::size_t round = len * jobs;
+    const std::size_t residue = count % jobs;
+    if(iohelper::pwrite(fd, b + round, residue, static_cast<off_t>(round)) == -1){
+        ERROR("pwrite");
+    }
+
+    return static_cast<ssize_t>(count);
 }
 
 // vim: expandtab shiftwidth=0 tabstop=4 :

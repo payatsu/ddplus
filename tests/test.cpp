@@ -155,6 +155,9 @@ protected:
         unlink(src_file);
         unlink(dst_file);
 
+        prm.verbose = true;
+        prm.jobs = 4;
+
         for(std::size_t i = 0; i < src_big_mem.length() / sizeof(std::size_t); ++i){
             reinterpret_cast<std::size_t*>(src_big_mem.offset())[i] = i;
         }
@@ -162,7 +165,6 @@ protected:
         EXPECT_EQ(pipe(pipefd), 0);
         char buf[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
         ssize_t size = sizeof(buf);
-
         write(pipefd[1], buf, size);
     }
     ~TransferTest()
@@ -185,9 +187,6 @@ protected:
 
 TEST_F(TransferTest, FromMmappedToMmappedTest)
 {
-    prm.verbose = true;
-    prm.jobs = 4;
-
     // basic test.
     {
         // TODO: 'src' should have the role 'SRC', not 'DST'.
@@ -228,9 +227,15 @@ TEST_F(TransferTest, FromMmappedToRegularTest)
     }
 
     {
-        target dst(dst_file, target_role::DST);
-        EXPECT_EQ(src_big_mem.transfer_to(dst, prm), 0);
-        EXPECT_EQ(std::memcmp(dst.offset(), src_big_mem.offset(), dst.length()), 0);
+        for(int i: {0, 1, 2, 3}){
+            target tmp("/dev/zero", target_role::DST, 0, src_big_mem.length() - i);
+            EXPECT_EQ(src_big_mem.transfer_to(tmp, prm), 0);
+
+            target dst(dst_file, target_role::DST);
+            EXPECT_EQ(tmp.transfer_to(dst, prm), 0);
+            target chk(dst_file, target_role::SRC);
+            EXPECT_EQ(std::memcmp(chk.offset(), tmp.offset(), chk.length()), 0);
+        }
     }
 }
 
