@@ -29,6 +29,7 @@ public:
     ~target(){}
 
     int transfer_to(const target& dest, const param& prm)const;
+    void mmap(int prot);
 
     // deprecated.
     char* offset()const{return mmapped_data_.get() + page_offset_;}

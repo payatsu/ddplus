@@ -54,16 +54,8 @@ page_offset_(offset_ & (static_cast<std::size_t>(page_size_) - 1))
     case target_role::DST: prot = PROT_WRITE; break;
     default: ERROR_THROW(""); break;
     }
-    void* m = mmap(nullptr, page_offset_ + length_, prot, MAP_SHARED | MAP_POPULATE, *ptr_to_fd_,
-            static_cast<off_t>(offset_ & ~(
-                    static_cast<std::size_t>(page_size_) - 1)));
 
-    if(m == MAP_FAILED){
-        ERROR_THROW("mmap");
-    }
-
-    mmapped_data_.reset(reinterpret_cast<char*>(m),
-            [&](char* p){munmap(p, page_offset_ + length_);});
+    mmap(prot);
 }
 
 target::target(int fd)
@@ -155,6 +147,20 @@ int target::transfer_to(const target& dest, const param& prm)const
     }
 
     return 0;
+}
+
+void target::mmap(int prot)
+{
+    void* m = ::mmap(nullptr, page_offset_ + length_, prot, MAP_SHARED | MAP_POPULATE, *ptr_to_fd_,
+            static_cast<off_t>(offset_ & ~(
+                    static_cast<std::size_t>(page_size_) - 1)));
+
+    if(m == MAP_FAILED){
+        ERROR_THROW("mmap");
+    }
+
+    mmapped_data_.reset(reinterpret_cast<char*>(m),
+            [&](char* p){::munmap(p, page_offset_ + length_);});
 }
 
 std::size_t target::init_length(std::size_t length, target_role role)

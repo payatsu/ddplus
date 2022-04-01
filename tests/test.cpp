@@ -1,5 +1,7 @@
 #include <unistd.h>
+#include <sys/mman.h>
 #include <cstring>
+#include <thread>
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -146,100 +148,106 @@ TEST(TargetTest, ConstructionTest)
     }
 }
 
-class TransferTest: public ::testing::Test{
+class TransferFromMmapTest: public ::testing::Test{
 protected:
-    TransferTest():
-    src_big_mem("/dev/zero", target_role::DST, 0, 512 << 20),
+    TransferFromMmapTest():
+    src("/dev/zero", target_role::DST, 0, 512 << 20)
+    {
+        prm.verbose = true;
+        prm.jobs = 4;
+
+        for(std::size_t i = 0; i < src.length() / sizeof(std::size_t); ++i){
+            reinterpret_cast<std::size_t*>(src.offset())[i] = i;
+        }
+    }
+
+    ~TransferFromMmapTest()
+    {
+    }
+
+    param prm;
+
+    target src;
+
+};
+
+TEST_F(TransferFromMmapTest, ToMmappedTest)
+{
+    for(int i: {-3, -2, -1, 0, 1, 2, 3}){
+        target dst("/dev/zero", target_role::DST, 0, src.length() + i);
+        EXPECT_EQ(src.transfer_to(dst, prm), 0);
+        const std::size_t min = std::min(dst.length(), src.length());
+        EXPECT_EQ(std::memcmp(dst.offset(), src.offset(), min), 0);
+        for(std::size_t i = min; i < dst.length(); ++i){
+            EXPECT_EQ(dst.offset()[i], 0);
+        }
+    }
+}
+
+TEST_F(TransferFromMmapTest, ToRegularTest)
+{
+    for(int i: {0, 1, 2, 3}){
+        target tmp("/dev/zero", target_role::DST, 0, src.length() - i);
+        EXPECT_EQ(src.transfer_to(tmp, prm), 0);
+        const char* dst_file = "out.bin";
+        target dst(dst_file, target_role::DST);
+        EXPECT_EQ(tmp.transfer_to(dst, prm), 0);
+        dst.mmap(PROT_READ);
+        EXPECT_EQ(std::memcmp(dst.offset(), tmp.offset(), dst.length()), 0);
+        unlink(dst_file);
+    }
+}
+
+TEST_F(TransferFromMmapTest, ToPipeTest)
+{
+    int pipefd[2];
+    EXPECT_EQ(pipe(pipefd), 0);
+
+    std::thread th([&](){
+        target dst(pipefd[1]);
+        EXPECT_EQ(src.transfer_to(dst, prm), 0);
+        close(pipefd[1]);
+    });
+
+    target src2(pipefd[0]);
+    target dst2("/dev/zero", target_role::DST, 0, src.length());
+    EXPECT_EQ(src2.transfer_to(dst2, prm), 0);
+    close(pipefd[0]);
+    th.join();
+
+    EXPECT_EQ(std::memcmp(dst2.offset(), src.offset(), dst2.length()), 0);
+}
+
+class TransferFromPipeTest: public ::testing::Test{
+protected:
+    TransferFromPipeTest():
     pipefd()
     {
-        unlink(src_file);
         unlink(dst_file);
 
         prm.verbose = true;
         prm.jobs = 4;
-
-        for(std::size_t i = 0; i < src_big_mem.length() / sizeof(std::size_t); ++i){
-            reinterpret_cast<std::size_t*>(src_big_mem.offset())[i] = i;
-        }
 
         EXPECT_EQ(pipe(pipefd), 0);
         char buf[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
         ssize_t size = sizeof(buf);
         write(pipefd[1], buf, size);
     }
-    ~TransferTest()
-    {
-        unlink(src_file);
-        unlink(dst_file);
 
+    ~TransferFromPipeTest()
+    {
+        unlink(dst_file);
         close(pipefd[0]);
         close(pipefd[1]);
     }
-    param prm;
-    const char* src_file = "in.bin";
-    const char* dst_file = "out.bin";
 
-    // TODO: 'src' should have the role 'SRC', not 'DST'.
-    target src_big_mem;
+    param prm;
+    const char* dst_file = "out.bin";
 
     int pipefd[2];
 };
 
-TEST_F(TransferTest, FromMmappedToMmappedTest)
-{
-    // basic test.
-    {
-        // TODO: 'src' should have the role 'SRC', not 'DST'.
-        target src("/dev/zero", target_role::DST, 0, 8);
-        std::memset(src.offset(), '\xff', src.length());
-
-        for(int j: {8, 4, 16}){
-            target dst("/dev/zero", target_role::DST, 0, j);
-            EXPECT_EQ(src.transfer_to(dst, prm), 0);
-            const std::size_t min = std::min(src.length(), dst.length());
-            EXPECT_EQ(std::memcmp(dst.offset(), src.offset(), min), 0);
-            for(std::size_t i = min; i < dst.length(); ++i){
-                EXPECT_EQ(dst.offset()[i], 0);
-            }
-        }
-    }
-
-    {
-        for(int i: {0, 1, 2, 3}){
-            target dst("/dev/zero", target_role::DST, 0, src_big_mem.length() - i);
-            EXPECT_EQ(src_big_mem.transfer_to(dst, prm), 0);
-            EXPECT_EQ(std::memcmp(dst.offset(), src_big_mem.offset(),
-                         std::min(dst.length(), src_big_mem.length())), 0);
-        }
-    }
-}
-
-TEST_F(TransferTest, FromMmappedToRegularTest)
-{
-    {
-        target src("/dev/zero", target_role::SRC, 0, 4096);
-        target dst(dst_file, target_role::DST);
-        EXPECT_EQ(src.transfer_to(dst, prm), 0);
-
-        target chk(dst_file, target_role::SRC);
-        EXPECT_EQ(chk.offset()[0], src.offset()[0]);
-        EXPECT_EQ(chk.offset()[1], src.offset()[1]);
-    }
-
-    {
-        for(int i: {0, 1, 2, 3}){
-            target tmp("/dev/zero", target_role::DST, 0, src_big_mem.length() - i);
-            EXPECT_EQ(src_big_mem.transfer_to(tmp, prm), 0);
-
-            target dst(dst_file, target_role::DST);
-            EXPECT_EQ(tmp.transfer_to(dst, prm), 0);
-            target chk(dst_file, target_role::SRC);
-            EXPECT_EQ(std::memcmp(chk.offset(), tmp.offset(), chk.length()), 0);
-        }
-    }
-}
-
-TEST_F(TransferTest, FromPipeToMmappedShortTest)
+TEST_F(TransferFromPipeTest, ToMmappedShortTest)
 {
     target src(pipefd[0]);
     target dst("/dev/zero", target_role::DST, 0, 4);
@@ -250,7 +258,7 @@ TEST_F(TransferTest, FromPipeToMmappedShortTest)
     EXPECT_EQ(dst.offset()[4],   0); // check for 'of by one' error.
 }
 
-TEST_F(TransferTest, FromPipeToMmappedJustTest)
+TEST_F(TransferFromPipeTest, ToMmappedJustTest)
 {
     target src(pipefd[0]);
     target dst("/dev/zero", target_role::DST, 0, 8);
@@ -260,7 +268,7 @@ TEST_F(TransferTest, FromPipeToMmappedJustTest)
     EXPECT_EQ(dst.offset()[7], 'h');
 }
 
-TEST_F(TransferTest, FromPipeToMmappedLongTest)
+TEST_F(TransferFromPipeTest, ToMmappedLongTest)
 {
     target src(pipefd[0]);
 
@@ -274,7 +282,7 @@ TEST_F(TransferTest, FromPipeToMmappedLongTest)
     EXPECT_EQ(dst.offset()[8],   0);
 }
 
-TEST_F(TransferTest, FromPipeToRegularTest)
+TEST_F(TransferFromPipeTest, ToRegularTest)
 {
     target src(pipefd[0]);
 
