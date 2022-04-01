@@ -107,30 +107,18 @@ int target::transfer_to(const target& dest, const param& prm)const
             }
         }
     }else{
-        const std::size_t buff_size = static_cast<std::size_t>(page_size_) * 16ul;
-        std::shared_ptr<char[]> buff(new char[buff_size]);
-
-        ssize_t r_ret;
-        std::size_t transfer_count = 0ul;
-        while((r_ret = iohelper::read(*ptr_to_fd_, buff.get(), buff_size)) != 0){
-            if(r_ret == -1){
-                ERROR("read");
+        if(dest.mmapped_data_){
+            ssize_t ret;
+            std::size_t count = 0ul;
+            while((ret = iohelper::read(*ptr_to_fd_, dest.offset() + count, dest.length_ - count)) != 0){
+                if(ret == -1){
+                    ERROR("read");
+                }
+                count += static_cast<std::size_t>(ret);
             }
-            std::size_t r = static_cast<std::size_t>(r_ret);
-            if(dest.mmapped_data_){
-                if(dest.length_ < transfer_count + r){
-                    r = dest.length_ - transfer_count;
-                }
-                std::memcpy(dest.offset() + transfer_count, buff.get(), r);
-                transfer_count += r;
-                if(dest.length_ <= transfer_count){
-                    break;
-                }
-            }else{
-                ssize_t w_ret = iohelper::write(*dest.ptr_to_fd_, buff.get(), r);
-                if(w_ret == -1){
-                    ERROR("write");
-                }
+        }else{
+            if(passthrough(dest) != 0){
+                ERROR("passthrough");
             }
         }
     }
@@ -203,6 +191,30 @@ void target::preprocess(target_role role)
         ERROR_THROW("unsupported st_mode");
         break;
     }
+}
+
+int target::passthrough(const target& dest)const
+{
+    const std::size_t buff_size = static_cast<std::size_t>(page_size_) * 16ul;
+    std::shared_ptr<char[]> buff(new char[buff_size]);
+
+    ssize_t r_ret;
+    while((r_ret = iohelper::read(*ptr_to_fd_, buff.get(), buff_size)) != 0){
+        if(r_ret == -1){
+            ERROR("read");
+        }
+        const std::size_t r = static_cast<std::size_t>(r_ret);
+        ssize_t w_ret = iohelper::write(*dest.ptr_to_fd_, buff.get(), r);
+        if(w_ret == -1){
+            ERROR("write");
+        }
+        switch(dest.stat_.st_mode & S_IFMT){
+        case S_IFREG: case S_IFLNK: dest.length_ += r; break;
+        default: break;
+        }
+    }
+
+    return 0;
 }
 
 int target::hexdump(int fd, const char* data, std::size_t offset,

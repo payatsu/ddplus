@@ -178,14 +178,16 @@ TEST_F(TransferFromMmapTest, ToMmappedTest)
         EXPECT_EQ(src.transfer_to(dst, prm), 0);
         const std::size_t min = std::min(dst.length(), src.length());
         EXPECT_EQ(std::memcmp(dst.offset(), src.offset(), min), 0);
-        for(std::size_t i = min; i < dst.length(); ++i){
-            EXPECT_EQ(dst.offset()[i], 0);
+        for(std::size_t j = min; j < dst.length(); ++j){
+            EXPECT_EQ(dst.offset()[j], 0);
         }
     }
 }
 
 TEST_F(TransferFromMmapTest, ToRegularTest)
 {
+    std::cout << "please wait..." << std::endl;
+
     for(int i: {0, 1, 2, 3}){
         target tmp("/dev/zero", target_role::DST, 0, src.length() - i);
         EXPECT_EQ(src.transfer_to(tmp, prm), 0);
@@ -290,12 +292,12 @@ TEST_F(TransferFromPipeTest, ToRegularTest)
 
     target dst(dst_file, target_role::DST);
     EXPECT_EQ(src.transfer_to(dst, prm), 0);
+    dst.mmap(PROT_READ);
 
-    target chk(dst_file, target_role::SRC);
-    EXPECT_EQ(chk.length(), 8);
-    EXPECT_EQ(chk.offset()[0], 'a');
-    EXPECT_EQ(chk.offset()[1], 'b');
-    EXPECT_EQ(chk.offset()[7], 'h');
+    EXPECT_EQ(dst.length(), 8);
+    EXPECT_EQ(dst.offset()[0], 'a');
+    EXPECT_EQ(dst.offset()[1], 'b');
+    EXPECT_EQ(dst.offset()[7], 'h');
 }
 
 // vim: expandtab shiftwidth=0 tabstop=4 :

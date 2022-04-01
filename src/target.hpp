@@ -45,6 +45,7 @@ private:
 
     std::size_t init_length(std::size_t length, target_role role);
     void preprocess(target_role role);
+    int passthrough(const target& dest)const;
 
     static int hexdump(int fd, const char* data, std::size_t offset,
             std::size_t length, std::size_t page_offset, const param& prm);
