@@ -151,7 +151,7 @@ TEST(TargetTest, ConstructionTest)
 class TransferFromMmapTest: public ::testing::Test{
 protected:
     TransferFromMmapTest():
-    src("/dev/zero", target_role::DST, 0, 512 << 20)
+    src("/dev/zero", target_role::DST, 0, 8 << 20)
     {
         prm.verbose = true;
         prm.jobs = 4;
@@ -166,9 +166,7 @@ protected:
     }
 
     param prm;
-
     target src;
-
 };
 
 TEST_F(TransferFromMmapTest, ToMmappedTest)
@@ -223,30 +221,34 @@ TEST_F(TransferFromMmapTest, ToPipeTest)
 class TransferFromPipeTest: public ::testing::Test{
 protected:
     TransferFromPipeTest():
-    pipefd()
+    pipefd(),
+    thread_([&]()
+        {
+            EXPECT_EQ(pipe(pipefd), 0);
+            char buf[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
+            ssize_t size = sizeof(buf);
+            EXPECT_EQ(write(pipefd[1], buf, size), size);
+            close(pipefd[1]);
+        })
     {
-        unlink(dst_file);
-
         prm.verbose = true;
         prm.jobs = 4;
 
-        EXPECT_EQ(pipe(pipefd), 0);
-        char buf[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
-        ssize_t size = sizeof(buf);
-        write(pipefd[1], buf, size);
+        while(pipefd[0] == 0 || pipefd[1] == 0){
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
     }
 
     ~TransferFromPipeTest()
     {
-        unlink(dst_file);
         close(pipefd[0]);
-        close(pipefd[1]);
+        thread_.join();
     }
 
     param prm;
-    const char* dst_file = "out.bin";
-
     int pipefd[2];
+
+    std::thread thread_;
 };
 
 TEST_F(TransferFromPipeTest, ToMmappedShortTest)
@@ -274,8 +276,6 @@ TEST_F(TransferFromPipeTest, ToMmappedLongTest)
 {
     target src(pipefd[0]);
 
-    close(pipefd[1]); // close explicitly to cause pipe end.
-
     target dst("/dev/zero", target_role::DST, 0, 16);
     EXPECT_EQ(src.transfer_to(dst, prm), 0);
     EXPECT_EQ(dst.offset()[0], 'a');
@@ -288,7 +288,7 @@ TEST_F(TransferFromPipeTest, ToRegularTest)
 {
     target src(pipefd[0]);
 
-    close(pipefd[1]); // close explicitly to cause pipe end.
+    const char* dst_file = "out.bin";
 
     target dst(dst_file, target_role::DST);
     EXPECT_EQ(src.transfer_to(dst, prm), 0);
@@ -298,6 +298,8 @@ TEST_F(TransferFromPipeTest, ToRegularTest)
     EXPECT_EQ(dst.offset()[0], 'a');
     EXPECT_EQ(dst.offset()[1], 'b');
     EXPECT_EQ(dst.offset()[7], 'h');
+
+    unlink(dst_file);
 }
 
 // vim: expandtab shiftwidth=0 tabstop=4 :
