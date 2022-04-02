@@ -1,7 +1,8 @@
-#include <unistd.h>
-#include <sys/mman.h>
 #include <cstring>
 #include <thread>
+#include <unistd.h>
+#include <sys/mman.h>
+#include <signal.h>
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -161,9 +162,7 @@ protected:
         }
     }
 
-    ~TransferFromMmapTest()
-    {
-    }
+    ~TransferFromMmapTest(){}
 
     param prm;
     target src;
@@ -184,8 +183,6 @@ TEST_F(TransferFromMmapTest, ToMmappedTest)
 
 TEST_F(TransferFromMmapTest, ToRegularTest)
 {
-    std::cout << "please wait..." << std::endl;
-
     for(int i: {0, 1, 2, 3}){
         target tmp("/dev/zero", target_role::DST, 0, src.length() - i);
         EXPECT_EQ(src.transfer_to(tmp, prm), 0);
@@ -218,22 +215,13 @@ TEST_F(TransferFromMmapTest, ToPipeTest)
     EXPECT_EQ(std::memcmp(dst2.offset(), src.offset(), dst2.length()), 0);
 }
 
-class TransferFromPipeTest: public ::testing::Test{
+class TransferFromPipeTest: public TransferFromMmapTest{
 protected:
     TransferFromPipeTest():
+    TransferFromMmapTest(),
     pipefd(),
-    thread_([&]()
-        {
-            EXPECT_EQ(pipe(pipefd), 0);
-            char buf[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
-            ssize_t size = sizeof(buf);
-            EXPECT_EQ(write(pipefd[1], buf, size), size);
-            close(pipefd[1]);
-        })
+    thread_(pipe_input, pipefd, src)
     {
-        prm.verbose = true;
-        prm.jobs = 4;
-
         while(pipefd[0] == 0 || pipefd[1] == 0){
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
@@ -245,60 +233,63 @@ protected:
         thread_.join();
     }
 
-    param prm;
-    int pipefd[2];
+    static void pipe_input(int* pipefd, const target& src)
+    {
+        EXPECT_EQ(pipe(pipefd), 0);
 
+        struct sigaction act = {};
+        act.sa_handler = SIG_IGN;
+        EXPECT_NE(sigaction(SIGPIPE, &act, nullptr), -1);
+
+        const std::size_t chunk = 1024;
+        int i = 0;
+        std::size_t rest = src.length();
+        do{
+            const ssize_t ret = write(pipefd[1], src.offset() + i * chunk, std::min(rest, chunk));
+            if(ret == -1){
+                break;
+            }
+            rest -= ret;
+            ++i;
+        }while(0 < rest);
+
+        close(pipefd[1]);
+    }
+
+    void restart(void)
+    {
+        close(pipefd[0]);
+        close(pipefd[1]);
+        thread_.join();
+        thread_ = std::thread(pipe_input, pipefd, src);
+    }
+
+    int pipefd[2];
     std::thread thread_;
 };
 
-TEST_F(TransferFromPipeTest, ToMmappedShortTest)
+TEST_F(TransferFromPipeTest, ToMmappedTest)
 {
-    target src(pipefd[0]);
-    target dst("/dev/zero", target_role::DST, 0, 4);
-    EXPECT_EQ(src.transfer_to(dst, prm), 0);
-    EXPECT_EQ(dst.offset()[0], 'a');
-    EXPECT_EQ(dst.offset()[1], 'b');
-    EXPECT_EQ(dst.offset()[3], 'd');
-    EXPECT_EQ(dst.offset()[4],   0); // check for 'of by one' error.
-}
+    for(int i: {-3, -2, -1, 0, 1, 2, 3}){
+        target dst("/dev/zero", target_role::DST, 0, src.length() + i);
+        EXPECT_EQ(target(pipefd[0]).transfer_to(dst, prm), 0);
+        const std::size_t min = std::min(dst.length(), src.length());
+        EXPECT_EQ(std::memcmp(dst.offset(), src.offset(), min), 0);
+        for(std::size_t j = min; j < dst.length(); ++j){
+            EXPECT_EQ(dst.offset()[j], 0);
+        }
 
-TEST_F(TransferFromPipeTest, ToMmappedJustTest)
-{
-    target src(pipefd[0]);
-    target dst("/dev/zero", target_role::DST, 0, 8);
-    EXPECT_EQ(src.transfer_to(dst, prm), 0);
-    EXPECT_EQ(dst.offset()[0], 'a');
-    EXPECT_EQ(dst.offset()[1], 'b');
-    EXPECT_EQ(dst.offset()[7], 'h');
-}
-
-TEST_F(TransferFromPipeTest, ToMmappedLongTest)
-{
-    target src(pipefd[0]);
-
-    target dst("/dev/zero", target_role::DST, 0, 16);
-    EXPECT_EQ(src.transfer_to(dst, prm), 0);
-    EXPECT_EQ(dst.offset()[0], 'a');
-    EXPECT_EQ(dst.offset()[1], 'b');
-    EXPECT_EQ(dst.offset()[7], 'h');
-    EXPECT_EQ(dst.offset()[8],   0);
+        restart();
+    }
 }
 
 TEST_F(TransferFromPipeTest, ToRegularTest)
 {
-    target src(pipefd[0]);
-
     const char* dst_file = "out.bin";
-
     target dst(dst_file, target_role::DST);
-    EXPECT_EQ(src.transfer_to(dst, prm), 0);
+    EXPECT_EQ(target(pipefd[0]).transfer_to(dst, prm), 0);
     dst.mmap(PROT_READ);
-
-    EXPECT_EQ(dst.length(), 8);
-    EXPECT_EQ(dst.offset()[0], 'a');
-    EXPECT_EQ(dst.offset()[1], 'b');
-    EXPECT_EQ(dst.offset()[7], 'h');
-
+    EXPECT_EQ(std::memcmp(dst.offset(), src.offset(), dst.length()), 0);
     unlink(dst_file);
 }
 
