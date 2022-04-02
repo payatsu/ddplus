@@ -40,12 +40,12 @@ public:
         }
 
         using std::chrono::duration_cast;
-        using std::chrono::microseconds;
+        using std::chrono::nanoseconds;
 
         time_point end = now();
-        microseconds elapsed_time = duration_cast<microseconds>(end - start_);
-        std::cerr << description_ << std::setprecision(2) << std::fixed
-            << static_cast<double>(elapsed_time.count()) / 1000.0
+        nanoseconds elapsed_time = duration_cast<nanoseconds>(end - start_);
+        std::cerr << description_ << std::setprecision(6) << std::fixed
+            << static_cast<double>(elapsed_time.count()) / 1000000.0
             << std::resetiosflags(std::ios::fixed) << " ms" << std::endl;
     }
 
