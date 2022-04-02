@@ -261,4 +261,4 @@ int option_parser::to_repeat(const std::string& spec)
     return n;
 }
 
-// vim: expandtab shiftwidth=0 tabstop=4 :
+// vim: set expandtab shiftwidth=0 tabstop=4 :

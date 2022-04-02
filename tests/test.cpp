@@ -293,4 +293,4 @@ TEST_F(TransferFromPipeTest, ToRegularTest)
     unlink(dst_file);
 }
 
-// vim: expandtab shiftwidth=0 tabstop=4 :
+// vim: set expandtab shiftwidth=0 tabstop=4 :

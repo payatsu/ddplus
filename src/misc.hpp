@@ -60,4 +60,4 @@ private:
 
 #endif // MISC_HPP_
 
-// vim: expandtab shiftwidth=0 tabstop=4 :
+// vim: set expandtab shiftwidth=0 tabstop=4 :

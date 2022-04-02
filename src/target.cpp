@@ -528,4 +528,4 @@ ssize_t target::iohelper::pwrite(int fd, const void* buf, size_t count, off_t of
     return static_cast<ssize_t>(count);
 }
 
-// vim: expandtab shiftwidth=0 tabstop=4 :
+// vim: set expandtab shiftwidth=0 tabstop=4 :

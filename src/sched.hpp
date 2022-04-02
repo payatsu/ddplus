@@ -9,4 +9,4 @@ void set_scheduling_policy(int policy);
 
 #endif // SCHED_HPP_
 
-// vim: expandtab shiftwidth=0 tabstop=4 :
+// vim: set expandtab shiftwidth=0 tabstop=4 :

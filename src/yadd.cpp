@@ -27,4 +27,4 @@ int main(int argc, char* argv[])
     return 0;
 }
 
-// vim: expandtab shiftwidth=0 tabstop=4 :
+// vim: set expandtab shiftwidth=0 tabstop=4 :

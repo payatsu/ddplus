@@ -33,4 +33,4 @@ private:
 
 #endif // OPTION_HPP_
 
-// vim: expandtab shiftwidth=0 tabstop=4 :
+// vim: set expandtab shiftwidth=0 tabstop=4 :
