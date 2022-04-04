@@ -8,6 +8,8 @@ yadd_SOURCES = \
 	option.cpp \
 	sched.hpp \
 	sched.cpp \
+	sighandler.hpp \
+	sighandler.cpp \
 	target.hpp \
 	target.cpp
 

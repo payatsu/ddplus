@@ -7,6 +7,7 @@
 #include "common.hpp"
 #include "misc.hpp"
 #include "sched.hpp"
+#include "sighandler.hpp"
 
 endian to_endian(const std::string& str)
 {
@@ -71,6 +72,7 @@ int target::transfer_to(const target& dest, const param& prm)const
 {
     stopwatch sw(prm.verbose, std::string(__func__) + ": ");
     set_scheduling_policy(prm.scheduling_policy);
+    set_signal_handler();
 
     if(iohelper::lseek(*ptr_to_fd_, 0, SEEK_SET) == -1){
         ERROR("lseek");
@@ -488,6 +490,7 @@ void *target::iohelper::memcpy(void *dest, const void *src, size_t n, int sched_
     for(unsigned int i = 0; i < jobs; ++i){
         threads.emplace_back(std::thread([sched_policy](void* dp, const void* sp, std::size_t l){
             set_scheduling_policy(sched_policy);
+            set_signal_handler();
             std::memcpy(dp, sp, l);
         }, d + i * len, s + i * len, len));
     }
@@ -511,6 +514,7 @@ ssize_t target::iohelper::pwrite(int fd, const void* buf, size_t count, off_t of
     for(unsigned int i = 0; i < jobs; ++i){
         threads.emplace_back(std::thread([fd, sched_policy](const void* bp, size_t cnt, off_t os){
             set_scheduling_policy(sched_policy);
+            set_signal_handler();
             if(iohelper::pwrite(fd, bp, cnt, os) == -1){
                 ERROR_THROW("pwrite");
             }
