@@ -31,8 +31,8 @@ class stopwatch{
     using time_point = std::chrono::high_resolution_clock::time_point;
 
 public:
-    stopwatch(bool enabled = true, const std::string& description = ""):
-    enabled_(enabled), description_(description), start_(now()){}
+    stopwatch(const std::string& description = "", bool enabled = true):
+    description_(description), enabled_(enabled), start_(now()){}
     ~stopwatch()
     {
         if(!enabled_){
@@ -49,12 +49,14 @@ public:
             << std::resetiosflags(std::ios::fixed) << " ms" << std::endl;
     }
 
+    void set(bool enabled){enabled_ = enabled;}
+
 private:
     static time_point now(){return std::chrono::high_resolution_clock::now();}
 
 private:
-    bool enabled_;
     const std::string description_;
+    bool enabled_;
     const time_point start_;
 };
 

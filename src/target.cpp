@@ -70,7 +70,7 @@ page_offset_()
 
 int target::transfer_to(const target& dest, const param& prm)const
 {
-    stopwatch sw(prm.verbose, std::string(__func__) + ": ");
+    stopwatch sw(std::string(__func__) + ": ", prm.verbose);
     set_scheduling_policy(prm.scheduling_policy);
     set_signal_handler();
 
