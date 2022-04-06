@@ -3,6 +3,7 @@
 #endif
 
 #include <exception>
+#include <sys/resource.h>
 #include "common.hpp"
 #include "misc.hpp"
 #include "option.hpp"
@@ -14,6 +15,13 @@ int main(int argc, char* argv[])
 {
     progname = argv[0];
     stopwatch sw(std::string(progname) + ": ");
+
+    struct rlimit rlim;
+    if(getrlimit(RLIMIT_CORE, &rlim)   == -1 ||
+       (rlim.rlim_cur = rlim.rlim_max) ==  0 ||
+       setrlimit(RLIMIT_CORE, &rlim)   == -1){
+        ERROR("getrlimit/setrlimit");
+    }
 
     try{
         std::shared_ptr<param> param = option_parser(argc, argv).parse_cmdopt();
