@@ -90,22 +90,8 @@ int target::transfer_to(const target& dest, const param& prm)const
                 ERROR("hexdump");
             }
         }else{
-            switch(dest.stat_.st_mode & S_IFMT){
-            case S_IFREG: case S_IFLNK:
-                if(iohelper::pwrite(*dest.ptr_to_fd_, offset(), length_,
-                            static_cast<off_t>(dest.length_), prm.scheduling_policy, jobs) == -1){
-                    ERROR("pwrite");
-                }
-                dest.length_ += length_;
-                break;
-            case S_IFSOCK: case S_IFIFO: case S_IFCHR:
-                if(iohelper::write(*dest.ptr_to_fd_, offset(), length_) == -1){
-                    ERROR("write");
-                }
-                break;
-            default:
-                ERROR_THROW("unsupported st_mode");
-                break;
+            if(write_to(dest, prm) != 0){
+                ERROR("write_to");
             }
         }
     }else{
@@ -133,6 +119,38 @@ int target::transfer_to(const target& dest, const param& prm)const
     if(fsync(*dest.ptr_to_fd_) == -1){
         if(errno != EROFS && errno != EINVAL){
             ERROR("fsync");
+        }
+    }
+
+    return 0;
+}
+
+int target::write_to(const target& dest, const param& prm)const
+{
+    const std::size_t jobs = static_cast<std::size_t>(prm.jobs);
+
+    bool use_pwrite;
+
+    switch(dest.stat_.st_mode & S_IFMT){
+    case S_IFREG:  case S_IFLNK: use_pwrite = true;  break;
+    case S_IFSOCK: case S_IFIFO: use_pwrite = false; break;
+    case S_IFCHR:
+        use_pwrite = !isatty(*dest.ptr_to_fd_);
+        break;
+    default:
+        ERROR_THROW("unsupported st_mode");
+        break;
+    }
+
+    if(use_pwrite){
+        if(iohelper::pwrite(*dest.ptr_to_fd_, offset(), length_,
+                    static_cast<off_t>(dest.length_), prm.scheduling_policy, jobs) == -1){
+            ERROR("pwrite");
+        }
+        dest.length_ += length_;
+    }else{
+        if(iohelper::write(*dest.ptr_to_fd_, offset(), length_) == -1){
+            ERROR("write");
         }
     }
 

@@ -29,6 +29,8 @@ public:
     ~target(){}
 
     int transfer_to(const target& dest, const param& prm)const;
+    int write_to(const target& dest, const param& prm)const;
+
     void mmap(int prot);
 
     // deprecated.
