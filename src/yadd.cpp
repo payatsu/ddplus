@@ -32,10 +32,11 @@ int main(int argc, char* argv[])
             }
         }
     }catch(const std::exception&){
-        ; // do nothing.
+        sw.set(false);
+        return EXIT_FAILURE;
     }
 
-    return 0;
+    return EXIT_SUCCESS;
 }
 
 // vim: set expandtab shiftwidth=0 tabstop=4 :

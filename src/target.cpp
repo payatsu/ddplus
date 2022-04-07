@@ -155,6 +155,10 @@ void target::mmap(int prot)
 
 std::size_t target::init_length(std::size_t length, target_role role)
 {
+    if(*ptr_to_fd_ == -1){
+        return 0;
+    }
+
     switch(stat_.st_mode & S_IFMT){
     case S_IFREG:
     case S_IFLNK:
@@ -473,7 +477,7 @@ void target::iohelper::close(int* fd_ptr)
 struct stat target::iohelper::fstat(int fd)
 {
     struct stat buf;
-    if(::fstat(fd, &buf) == -1){
+    if(0 <= fd && ::fstat(fd, &buf) == -1){
         ERROR_THROW("fstat");
     }
     return buf;
