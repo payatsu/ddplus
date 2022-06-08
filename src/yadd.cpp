@@ -16,11 +16,15 @@ int main(int argc, char* argv[])
     progname = argv[0];
     stopwatch sw(std::string(progname) + ": ");
 
-    struct rlimit rlim;
-    if(getrlimit(RLIMIT_CORE, &rlim)   == -1 ||
-       (rlim.rlim_cur = rlim.rlim_max) ==  0 ||
-       setrlimit(RLIMIT_CORE, &rlim)   == -1){
+    struct rlimit rlim = {};
+    if(getrlimit(RLIMIT_CORE, &rlim) == -1 ||
+       (rlim.rlim_cur = rlim.rlim_max,
+        setrlimit(RLIMIT_CORE, &rlim) == -1)){
         ERROR("getrlimit/setrlimit");
+    }
+
+    if(rlim.rlim_cur == 0){
+        WARN("core file is not available. the hard limit of its size is zero." );
     }
 
     try{

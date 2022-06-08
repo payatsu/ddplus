@@ -8,6 +8,16 @@
 #include <iomanip>
 #include <iostream>
 
+#define WARN(message) \
+    do{ \
+        std::cerr << (progname) \
+            << ':' << __FILE__ \
+            << ':' << std::to_string(__LINE__) \
+            << ':' << __func__ \
+            << ": WARNING" \
+               ": " << (message) << std::endl; \
+    }while(false)
+
 #define ERROR_BASE(message, finish) \
     do{ \
         std::cerr << (progname) \
