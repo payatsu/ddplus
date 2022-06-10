@@ -20,12 +20,16 @@ Makefile.in
 aclocal.m4
 autom4te.cache
 autoscan.log
+build-aux/*
+!build-aux/.gitkeep
 config.h
 config.h.in
 config.log
 config.status
 configure
 libtool
+m4/*
+!m4/.gitkeep
 stamp-h1
 tags
 src/yadd
