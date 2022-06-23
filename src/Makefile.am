@@ -11,6 +11,7 @@ libyadd_la_SOURCES = \
 	sighandler.cpp \
 	target.hpp \
 	target.cpp
+libyadd_la_LDFLAGS = -version-info $(so_version_info)
 
 bin_PROGRAMS = yadd
 yadd_DEPENDENCIES = libyadd.la

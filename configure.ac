@@ -3,6 +3,9 @@
 
 AC_PREREQ([2.69])
 AC_INIT([yadd], [0.0.1], [BUG-REPORT-ADDRESS])
+so_version_info=0:0:0
+AC_SUBST([so_version_info])
+
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 AM_SILENT_RULES([yes])
