@@ -32,7 +32,7 @@ m4/*
 !m4/.gitkeep
 stamp-h1
 tags
-src/yadd
+src/masterkey
 tests/googletest-release-*/
 tests/gtest/
 tests/testsuite

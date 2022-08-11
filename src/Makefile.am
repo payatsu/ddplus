@@ -1,5 +1,5 @@
-lib_LTLIBRARIES = libyadd.la
-libyadd_la_SOURCES = \
+lib_LTLIBRARIES = libmasterkey.la
+libmasterkey_la_SOURCES = \
 	common.hpp \
 	fwd.hpp \
 	misc.hpp \
@@ -11,19 +11,19 @@ libyadd_la_SOURCES = \
 	sighandler.cpp \
 	target.hpp \
 	target.cpp
-libyadd_la_LDFLAGS = -version-info $(so_version_info)
+libmasterkey_la_LDFLAGS = -version-info $(so_version_info)
 
-bin_PROGRAMS = yadd
-yadd_DEPENDENCIES = libyadd.la
-yadd_SOURCES = \
+bin_PROGRAMS = masterkey
+masterkey_DEPENDENCIES = libmasterkey.la
+masterkey_SOURCES = \
 	common.hpp \
 	misc.hpp \
 	option.hpp \
 	target.hpp \
-	yadd.cpp
-yadd_LDADD = libyadd.la
+	masterkey.cpp
+masterkey_LDADD = libmasterkey.la
 
-yadd_CXXFLAGS = -std=c++17 $(warning_options)
+masterkey_CXXFLAGS = -std=c++17 $(warning_options)
 
 .PHONY: list-warning-options
 list-warning-options:

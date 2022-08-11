@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([yadd], [0.0.1], [BUG-REPORT-ADDRESS])
+AC_INIT([masterkey], [0.0.1], [BUG-REPORT-ADDRESS])
 so_version_info=0:0:0
 AC_SUBST([so_version_info])
 
@@ -10,7 +10,7 @@ AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 AM_SILENT_RULES([yes])
 AC_LANG([C++])
-AC_CONFIG_SRCDIR([src/yadd.cpp])
+AC_CONFIG_SRCDIR([src/masterkey.cpp])
 AC_CONFIG_HEADERS([config.h])
 
 # Checks for programs.
