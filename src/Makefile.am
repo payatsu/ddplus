@@ -1,7 +1,6 @@
-bin_PROGRAMS = yadd
-yadd_SOURCES = \
+lib_LTLIBRARIES = libyadd.la
+libyadd_la_SOURCES = \
 	common.hpp \
-	yadd.cpp \
 	fwd.hpp \
 	misc.hpp \
 	option.hpp \
@@ -12,6 +11,17 @@ yadd_SOURCES = \
 	sighandler.cpp \
 	target.hpp \
 	target.cpp
+libyadd_la_LDFLAGS = -version-info $(so_version_info)
+
+bin_PROGRAMS = yadd
+yadd_DEPENDENCIES = libyadd.la
+yadd_SOURCES = \
+	common.hpp \
+	misc.hpp \
+	option.hpp \
+	target.hpp \
+	yadd.cpp
+yadd_LDADD = libyadd.la
 
 yadd_CXXFLAGS = -std=c++17 $(warning_options)
 
